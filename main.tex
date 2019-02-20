@@ -108,6 +108,10 @@ Your task is to \textcolor{red}{1.} derive the recurrence relation (bellman equa
 \end{center}
 
 \begin{solution}
+i) $V(s) = \max_{a_{i}} R(s,a_{i}) + C(s,a_{i})$\\
+ii)$Q(s,a) = R(s,a) + \gamma \sum_{s'} T(s,a,s')V(s')$ \\
+iii)$Q(s,a) = R(s,a)  + C(s,a)$\\
+iv)$C(s,a) = \gamma \sum_{s'} T(s,a,s')\max_{a'}Q(s',a')$
 \end{solution}
 
 \subsection*{Question 1.b \textbf{[4 pts]}}
@@ -118,6 +122,8 @@ Use the relation between the functions and your understanding of MDPs to answer 
 \end{enumerate}
 
 \begin{solution}
+1. True.  If only V(s) is known, it is required that we know the dynamics in order to realize the optimal policy since we cannot know what action to take to move to a higher-valued state if we know only V(s) because we would not know what state we would end up in given any action.\\
+2. False.  Knowing C(s,a) and R(s,a) gives Q(s,a) by (iii) in the previous problem, which is better than knowing V(s,a) by (1)
 \end{solution}
 % 2 + 2 + 4 + 4 = 12
 
@@ -140,6 +146,18 @@ In this question, you'll find the expectation of the function $f(x) = \frac{3}{2
 \end{enumerate}
 For each of the above cases, fix and report the random seed so that your answer can be validated when we run your code.
 \begin{solution}
+1: \begin{align*}
+f(x) = \frac{3}{2}x^{2}(1+x) and 
+p(x) = \frac{1}{2}(1+x) -1\leq x \leq 1 \\
+\int f(x)p(x) dx = \frac{3}{4} \int_{-1}^{1} x^{2}(1+x)^{2}dx = \frac{3}{4}\left[\int_{-1}^{1} x^{4} dx + \int_{-1}^{1} 2x^{3} dx + \int_{-1}^{1} x^{2} dx \right] \\
+= \frac{3}{4}\left[ \frac{2}{5} + 0+\frac{2}{3}\right] = .8 = \mathbb{E}_p[f(x)]\\
+\int (f(x)-.8)^{2}p(x) dx = \int_{-1}^{1} (\frac{3}{2}x^{2}(1+x) -.8)^2\frac{1}{2}(1+x) dx \\
+= \frac{1}{2} \int_{-1}^{1} \frac{9x^{7}}{4} + \frac{27x^{6}}{4} +\frac{27x^{5}}{4} -.15x^{4} - 4.8x^{3} - 2.4x^{2} + .64x + .64 dx \\ 
+= \frac{1}{2} \int_{-1}^{1} \frac{27x^{6}}{4}  -.15x^{4} - 2.4x^{2} + .64 dx \\
+= \left[\frac{27}{28} - \frac{.15}{5} - \frac{2.4}{3} + .64 \right] \\ 
+= .775 = Var[f(x)]
+\end{align*}
+2:
 \end{solution}
 % 2 + 2 + 7 = 11
 \section*{Question 3 \textbf{[4+4+7=15 pts]}}
@@ -179,6 +197,25 @@ Think of this being one episode of your simulation where rewards are the elapsed
 \end{enumerate}
 
 \begin{solution}
+\begin{tabular}{|c|c|c|c|}
+\hline
+State & MC Reward & TD(0) Reward & $\lambda$ return\\
+\hline
+0&5&-20&$12.35$\\
+\hline
+1&25&5&$19.70$\\
+\hline
+2&20&3&$14.406$\\
+\hline
+3&17&12&$8.8125$\\
+\hline
+4&5&10&$.625$\\
+\hline
+5&-5&0&$-3.75$\\
+\hline
+6&-5&-5&$-2.5$\\
+\hline
+\end{tabular}
 \end{solution}
 
 % 60
