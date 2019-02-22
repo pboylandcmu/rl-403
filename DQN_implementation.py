@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import keras, tensorflow as tf, numpy as npy, gym, sys, copy, argparse
 
+
 class QNetwork():
 
 	# This class essentially defines the network architecture.
@@ -10,19 +11,54 @@ class QNetwork():
 	def __init__(self, environment_name):
 		# Define your network architecture here. It is also a good idea to define any training operations
 		# and optimizers here, initialize your variables, or alternately compile your model here.
-		pass
+		model = self.define_model(environment_name)
+		if(environment_name == 'CartPole-v0'):
+			self.num_actions = 2
+			self.state_size = 4
+		elif(environment_name == 'MountainCar-v0'):
+			self.num_actions = 3
+			self.state_size = 2
 
-	def save_model_weights(self, suffix):
-		# Helper function to save your model / weights.
-		pass
+	def define_model(self,environment_name):
+		model = Sequential()
+		if(environment_name == 'CartPole-v0'):
+			model.add(Dense(16, input_dim=4, activation='relu'))
+			model.add(Dense(16, activation='relu'))
+			model.add(Dense(16, activation='relu'))
+			model.add(Dense(2, activation='softmax'))
+		elif(environment_name == 'MountainCar-v0'):
+			model.add(Dense(16, input_dim=2, activation='relu'))
+			model.add(Dense(16, activation='relu'))
+			model.add(Dense(16, activation='relu'))
+			model.add(Dense(3, activation='softmax'))
+		model.compile(optimizer='Adam',
+              loss='MSE',
+              metrics=['accuracy'])
+		return model
+
+	def greedy_action(self,state,model=self.model):
+		return np.argmax(model.predict(state))
+
+	def epsilon_greedy_action(self,state,epsilon,model=self.model):
+		if(epsilon >= np.random()):
+			return np.randint(0,self.num_actions)
+		else: return self.greedy_action(state,model)
+
+	def save_model(self,model_file):
+		self.model.save(model_file)
 
 	def load_model(self, model_file):
-		# Helper function to load an existing model.
-		pass
+		return load_model(model_file)
 
+	'''
 	def load_model_weights(self,weight_file):
 		# Helper funciton to load model weights.
 		pass
+
+	def save_model_weights(self, suffix):
+		#We don't know what to do with this
+		pass
+	'''
 
 class Replay_Memory():
 
@@ -83,10 +119,10 @@ class DQN_Agent():
 	def test(self, model_file=None):
 		# Evaluate the performance of your agent over 100 episodes, by calculating cummulative rewards for the 100 episodes.
 		# Here you need to interact with the environment, irrespective of whether you are using a memory.
+		pass
 
-	def burn_in_memory():
+	def burn_in_memory(self):
 		# Initialize your replay memory with a burn_in number of episodes / transitions.
-
 		pass
 
 
