@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 import keras, tensorflow as tf, numpy as npy, gym, sys, copy, argparse
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.models import load_model
 from random import randint
 
 
@@ -19,6 +22,9 @@ class QNetwork():
 		elif(environment_name == 'MountainCar-v0'):
 			self.num_actions = 3
 			self.state_size = 2
+		else:
+			print("Invalid environment name\nTry 'CartPole-v0' or 'MountainCar-v0")
+			exit(0)
 
 	def define_model(self,environment_name):
 		model = Sequential()
