@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import keras, tensorflow as tf, numpy as npy, gym, sys, copy, argparse
+import keras, tensorflow as tf, numpy as np, gym, sys, copy, argparse
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.models import load_model
