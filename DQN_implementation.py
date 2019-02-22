@@ -97,7 +97,7 @@ class Replay_Memory():
 		for i in range(len(transition)):
 			self.memory[self.counter] = transition[i]
 			self.counter += 1
-			if self.counter > self.memory_size:
+			if self.counter > self.memsize:
 				self.counter = 0
 				self.full = True
 		# Appends transition to the memory.
