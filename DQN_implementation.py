@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import keras, tensorflow as tf, numpy as npy, gym, sys, copy, argparse
+from random import randint
 
 
 class QNetwork():
@@ -63,6 +64,10 @@ class QNetwork():
 class Replay_Memory():
 
 	def __init__(self, memory_size=50000, burn_in=10000):
+		self.memory = None
+		self.memsize = memory_size
+		self.counter = 0
+		self.full = False
 
 		# The memory essentially stores transitions recorder from the agent
 		# taking actions in the environment.
@@ -73,11 +78,22 @@ class Replay_Memory():
 		pass
 
 	def sample_batch(self, batch_size=32):
+		if self.full:
+			return [self.memory[randint(0,self.memsize)] for _ in range(batch_size)]
+		return [self.memory[randint(0,self.counter)] for _ in range(batch_size)]
 		# This function returns a batch of randomly sampled transitions - i.e. state, action, reward, next state, terminal flag tuples.
 		# You will feed this to your model to train.
 		pass
 
 	def append(self, transition):
+		if self.memory is None:
+			self.memory = [transition[0] for _ in range(self.memsize)]
+		for i in range(len(transition)):
+			self.memory[self.counter] = transition[i]
+			self.counter += 1
+			if self.counter > self.memory_size:
+				self.counter = 0
+				self.full = True
 		# Appends transition to the memory.
 		pass
 
