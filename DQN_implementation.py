@@ -97,7 +97,7 @@ class Replay_Memory():
 		for i in range(len(transition)):
 			self.memory[self.counter] = transition[i]
 			self.counter += 1
-			if self.counter > self.memory_size:
+			if self.counter > self.memsize:
 				self.counter = 0
 				self.full = True
 		# Appends transition to the memory.
@@ -124,10 +124,12 @@ class DQN_Agent():
 		self.replay_memory = Replay_Memory()
 
 	def epsilon_greedy_policy(self, q_values):
+		return lambda state : q_values.epsilon_greedy_action(state,self.epsilon)
 		# Creating epsilon greedy probabilities to sample from.
 		pass
 
 	def greedy_policy(self, q_values):
+		return lambda state : q_values.greedy_action(state,self.epsilon)
 		# Creating greedy policy for test time.
 		pass
 
