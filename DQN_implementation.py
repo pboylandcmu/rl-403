@@ -122,10 +122,12 @@ class DQN_Agent():
 		pass
 
 	def epsilon_greedy_policy(self, q_values):
+		return lambda state : q_values.epsilon_greedy_action(state,self.epsilon)
 		# Creating epsilon greedy probabilities to sample from.
 		pass
 
 	def greedy_policy(self, q_values):
+		return lambda state : q_values.greedy_action(state,self.epsilon)
 		# Creating greedy policy for test time.
 		pass
 
