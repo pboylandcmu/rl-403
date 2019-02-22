@@ -147,7 +147,7 @@ class DQN_Agent():
 			action = e_greedy(state)
 			old_state = state
 			state, reward, done = self.env.step(action)
-			self.replay_memory.append(old_state,action,reward,state)
+			self.replay_memory.append((old_state,action,reward,state))
 		pass
 
 	def test(self, model_file=None):
