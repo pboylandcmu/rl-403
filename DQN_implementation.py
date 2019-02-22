@@ -15,7 +15,7 @@ class QNetwork():
 	def __init__(self, environment_name):
 		# Define your network architecture here. It is also a good idea to define any training operations
 		# and optimizers here, initialize your variables, or alternately compile your model here.
-		model = self.define_model(environment_name)
+		self.model = self.define_model(environment_name)
 		if(environment_name == 'CartPole-v0'):
 			self.num_actions = 2
 			self.state_size = 4
@@ -119,7 +119,9 @@ class DQN_Agent():
 		# Create an instance of the network itself, as well as the memory.
 		# Here is also a good place to set environmental parameters,
 		# as well as training parameters - number of episodes / iterations, etc.
-		pass
+		self.env = gym.make(environment_name)
+		self.q_net = QNetwork(environment_name)
+		self.replay_memory = Replay_Memory()
 
 	def epsilon_greedy_policy(self, q_values):
 		# Creating epsilon greedy probabilities to sample from.
@@ -136,6 +138,14 @@ class DQN_Agent():
 
 		# If you are using a replay memory, you should interact with environment here, and store these
 		# transitions to memory, while also updating your model.
+		done = False
+		state = self.env.reset()
+		while not done:
+			e_greedy = self.epsilon_greedy_policy(self.q_net)
+			action = e_greedy(state)
+			old_state = state
+			state, reward, done = self.env.step(action)
+			self.replay_memory.append(old_state,action,reward,state)
 		pass
 
 	def test(self, model_file=None):
