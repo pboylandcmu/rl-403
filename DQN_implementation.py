@@ -319,7 +319,7 @@ def main(args):
 	for i in range(episodes):
 		print(i)
 		rewards.append(dqn.train())
-		print("running average" + str(np.mean(rewards) if len(rewards) < 51 else rewards[-50:]))
+		print("running average" + str(np.mean(rewards) if len(rewards) < 51 else np.mean(rewards[-50:])))
 		if (i + 1) % save_freq == 0:
 			dqn.q_net.save_model()
 			print("saved model after " + str(i) + " episodes.")
