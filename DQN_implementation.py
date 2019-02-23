@@ -27,6 +27,9 @@ class QNetwork():
 		else:
 			print("Invalid environment name\nTry 'CartPole-v0' or 'MountainCar-v0")
 			exit(0)
+		self.file_count = 0
+		self.file_name = "saved_model"
+		self.model_names = []
 
 	def define_model(self,environment_name):
 		model = Sequential()
@@ -63,11 +66,17 @@ class QNetwork():
 			return np.random.randint(0,self.num_actions)
 		else: return self.greedy_action(state,model)
 
-	def save_model(self,model_file):
-		self.model.save(model_file)
+
+	def save_model(self,model_file=self.file_name):
+		name = format(model_file + str(self.file_count) + ".h5")
+		self.model.save(name)
+		self.model_names.append(name)
+		return name
 
 	def load_model(self,model_file):
-		return load_model(model_file)
+		if(model_file is None):
+			return
+		self.model =  load_model(model_file)
 
 	def fit(self,D,epochs=1,verbosity=0):
 		states = []
@@ -183,7 +192,8 @@ class DQN_Agent():
 
 		# Evaluate the performance of your agent over 100 episodes, by calculating cummulative rewards for the 100 episodes.
 		# Here you need to interact with the environment, irrespective of whether you are using a memory.
-		pass
+		self.q_net.load_model(model_file)
+		
 
 	def burn_in_memory(self,burn_in=10000):
 		done = False
