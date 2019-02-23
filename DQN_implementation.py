@@ -179,6 +179,23 @@ class DQN_Agent():
 		# Creating greedy policy for test time.
 		pass
 
+	def lookahead_policy(self,q_values,state):
+		best_action = 0
+		best_value = float('-inf')
+		for a in range(0,2):
+			s,reward,done = self.env.step(a)
+			if(done):
+				if(reward > best_value):
+					best_value = reward
+					best_action = a
+				continue
+			for b in range(0,2):
+				s2 ,reward,done = self.env.step(b)
+				value = self.q_net.q_value(s2)
+				if(value > best_value):
+					best_value = value
+					best_action = a
+
 	def random_policy(self):
 		return lambda state : randint(0,self.q_net.num_actions)
 
@@ -220,7 +237,6 @@ class DQN_Agent():
 			total_reward += reward
 		return total_reward
 
-
 	def burn_in_memory(self,burn_in=10000):
 		done = False
 		pol = self.random_policy()
@@ -234,7 +250,6 @@ class DQN_Agent():
 			self.replay_memory.append((old_state,action,reward,state))
 
 		# Initialize your replay memory with a burn_in number of episodes / transitions.
-
 
 
 def parse_arguments():
@@ -269,7 +284,6 @@ def main(args):
 	model_names = dqn.q_net.model_names()
 	rewards = [dqn.test(model_file) for model_name in model_names]
 	
-
 if __name__ == '__main__':
 	main(sys.argv)
 
