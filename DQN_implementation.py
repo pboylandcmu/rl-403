@@ -70,6 +70,7 @@ class QNetwork():
 	def save_model(self,model_file=None):
 		if(model_file is None):
 			model_file = self.file_name
+		self.file_count += 1
 		name = format(model_file + str(self.file_count) + ".h5")
 		self.model.save(name)
 		self.model_names.append(name)
