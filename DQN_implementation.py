@@ -92,6 +92,7 @@ class Replay_Memory():
 		pass
 
 	def append(self, transition):
+		#
 		if self.memory is None:
 			self.memory = [transition[0] for _ in range(self.memsize)]
 		for i in range(len(transition)):
