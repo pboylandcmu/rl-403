@@ -44,7 +44,7 @@ class QNetwork():
 			model.add(Dense(16, activation='relu'))
 			model.add(Dense(16, activation='relu'))
 			model.add(Dense(3, activation='linear'))
-		model.compile(optimizer='Adam',
+		model.compile(optimizer=keras.optimizers.Adam(lr=self.learning_rate),
               loss='MSE',
               metrics=['accuracy'])
 		return model
