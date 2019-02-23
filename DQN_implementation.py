@@ -262,9 +262,10 @@ def main(args):
 	for i in range(episodes):
 		dqn.train()
 		if i % save_freq == 0:
-			#save the model
+			dqn.q_net.save()
 	model_names = dqn.q_net.model_names()
 	rewards = [dqn.test(model_file) for model_name in model_names]
+	
 
 if __name__ == '__main__':
 	main(sys.argv)
