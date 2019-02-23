@@ -92,17 +92,12 @@ class Replay_Memory():
 		pass
 
 	def append(self, transition):
-		#
+		#transition is a 4-tuple of s,a,r,s
 		if self.memory is None:
-			self.memory = [transition[0] for _ in range(self.memsize)]
-		for i in range(len(transition)):
-			self.memory[self.counter] = transition[i]
-			self.counter += 1
-			if self.counter > self.memsize:
-				self.counter = 0
-				self.full = True
+			self.memory = [transition for _ in range(self.memsize)]
+		self.memory[self.counter] = transition
+		self.counter += 1
 		# Appends transition to the memory.
-		pass
 
 class DQN_Agent():
 
