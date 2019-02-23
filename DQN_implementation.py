@@ -32,32 +32,46 @@ class QNetwork():
 			model.add(Dense(16, input_dim=4, activation='relu'))
 			model.add(Dense(16, activation='relu'))
 			model.add(Dense(16, activation='relu'))
-			model.add(Dense(2, activation='softmax'))
+			model.add(Dense(2, activation='linear'))
 		elif(environment_name == 'MountainCar-v0'):
 			model.add(Dense(16, input_dim=2, activation='relu'))
 			model.add(Dense(16, activation='relu'))
 			model.add(Dense(16, activation='relu'))
-			model.add(Dense(3, activation='softmax'))
+			model.add(Dense(3, activation='linear'))
 		model.compile(optimizer='Adam',
               loss='MSE',
               metrics=['accuracy'])
 		return model
 
-	def greedy_action(self,state,model=self.model):
+	def greedy_action(self,state,model=None):
+		if(model is None):
+			model = self.model
 		return np.argmax(model.predict(state))
 
-	def epsilon_greedy_action(self,state,epsilon,model=self.model):
-		if(epsilon >= np.random()):
-			return np.randint(0,self.num_actions)
+	def q_value(self,state,model = None):
+		if(model is None):
+			model = self.model
+		out = model.predict(state)
+		return np.amax(out)
+
+	def epsilon_greedy_action(self,state,epsilon,model=None):
+		if(model is None):
+			model = self.model
+		if(epsilon >= np.random.uniform()):
+			return np.random.randint(0,self.num_actions)
 		else: return self.greedy_action(state,model)
 
 	def save_model(self,model_file):
 		self.model.save(model_file)
 
-	def load_model(self, model_file):
+	def load_model(self,model_file):
 		return load_model(model_file)
 
-
+	def fit(self,states,targets,epochs,verbosity=0):
+		self.model.fit(x=states,y=targets,epochs=epochs,verbose=verbosity)
+        #score = model.evaluate(states,actions)
+        #print(score)
+        #return score[1]
 
 	'''
 	def load_model_weights(self,weight_file):
@@ -151,11 +165,7 @@ class DQN_Agent():
 			self.replay_memory.append((old_state,action,reward,state))
 
 			train_on = self.replay_memory.sample_batch()
-
-			for (s1,a,r,s2) in train_on:
-				
-
-
+			q_pairs = [((s1,a),r + self.gamma * (self.q_net.q_value(s2))) for (s1,a,r,s2) in train_on]
 
 		pass
 
