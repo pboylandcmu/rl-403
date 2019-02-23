@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-import keras, tensorflow as tf, numpy as np, gym, sys, copy, argparse
+import keras
+import tensorflow as tf, numpy as np, gym, sys, copy, argparse
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.models import load_model
@@ -51,13 +52,20 @@ class QNetwork():
 	def greedy_action(self,state,model=None):
 		if(model is None):
 			model = self.model
-		return np.argmax(model.predict(state))
+		out = self.predict(state,model)
+		return np.argmax(out)
 
 	def q_value(self,state,model = None):
 		if(model is None):
 			model = self.model
-		out = model.predict(state)
+		out = self.predict(state,model)
 		return np.amax(out)
+
+	def predict(self,state,model):
+        #put state in a list
+		s = []
+		s.append(state)
+		return model.predict(np.array(s))
 
 	def epsilon_greedy_action(self,state,epsilon,model=None):
 		if(model is None):
@@ -89,7 +97,7 @@ class QNetwork():
 		targets = []
 		for (state,action,target) in D:
 			states.append(state)
-			out = self.model.predict(state)
+			out = self.predict(state,self.model)
 			out[action] = target
 			targets.append(out)
 		self.model.fit(x=np.array(states),y=np.array(targets),epochs=epochs,verbose=verbosity,lr = self.learning_rate)
@@ -284,7 +292,7 @@ def main(args):
 			dqn.q_net.save()
 	model_names = dqn.q_net.model_names()
 	rewards = [dqn.test(model_file) for model_name in model_names]
-
+	
 if __name__ == '__main__':
 	main(sys.argv)
 
