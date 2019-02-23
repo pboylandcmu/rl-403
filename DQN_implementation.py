@@ -76,7 +76,7 @@ class QNetwork():
 			out[action] = target
 			targets.append(out)
 		self.model.fit(x=states,y=targets,epochs=epochs,verbose=verbosity)
-        #score = model.evaluate(states,actions)
+        #score = model.evaluate(states,targets)
         #print(score)
         #return score[1]
 
