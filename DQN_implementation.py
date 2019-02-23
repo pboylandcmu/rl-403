@@ -196,6 +196,8 @@ class DQN_Agent():
 					best_value = value
 					best_action = a
 
+		return best_action
+
 	def random_policy(self):
 		return lambda state : randint(0,self.q_net.num_actions)
 
