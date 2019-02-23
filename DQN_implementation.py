@@ -233,20 +233,23 @@ class DQN_Agent():
 
 		pass
 
-	def test(self, model_file=None):
+	def test(self,episodes,model_file=None):
 
 		# Evaluate the performance of your agent over 100 episodes, by calculating cummulative rewards for the 100 episodes.
 		# Here you need to interact with the environment, irrespective of whether you are using a memory.
 		self.q_net.load_model(model_file)
 		get_action = self.epsilon_greedy_policy(self.q_net,.05)
-		state = self.env.reset()
-		done = False
-		total_reward = 0
-		while not done:
-			action = get_action(state)
-			state, reward, done, _ = self.env.step(action)
-			total_reward += reward
-		return total_reward
+		total_rewards = []
+		for _ in range(episodes):
+			state = self.env.reset()
+			done = False
+			total_reward = 0
+			while not done:
+				action = get_action(state)
+				state, reward, done, _ = self.env.step(action)
+				total_reward += reward
+			total_rewards.append(total_reward)
+		return total_rewards
 
 	def burn_in_memory(self,burn_in=10000):
 		done = False
