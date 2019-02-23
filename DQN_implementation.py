@@ -165,7 +165,8 @@ class DQN_Agent():
 			self.replay_memory.append((old_state,action,reward,state))
 
 			train_on = self.replay_memory.sample_batch()
-			q_pairs = [((s1,a),r + self.gamma * (self.q_net.q_value(s2))) for (s1,a,r,s2) in train_on]
+			q_pairs = [(s1,a,r + self.gamma * (self.q_net.q_value(s2))) for (s1,a,r,s2) in train_on]
+			
 
 		pass
 
