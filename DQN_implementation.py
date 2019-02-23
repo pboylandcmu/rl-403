@@ -156,13 +156,15 @@ class DQN_Agent():
 		self.q_net = QNetwork(environment_name)
 		self.replay_memory = Replay_Memory() 
 
-	def epsilon_greedy_policy(self, q_values):
-		return lambda state : q_values.epsilon_greedy_action(state,self.epsilon)
+	def epsilon_greedy_policy(self, q_values,epsilon = None):
+		if(epsilon is None):
+			epsilon = self.epsilon
+		return lambda state : q_values.epsilon_greedy_action(state,epsilon)
 		# Creating epsilon greedy probabilities to sample from.
 		pass
 
 	def greedy_policy(self, q_values):
-		return lambda state : q_values.greedy_action(state,self.epsilon)
+		return lambda state : q_values.greedy_action(state)
 		# Creating greedy policy for test time.
 		pass
 
@@ -196,7 +198,16 @@ class DQN_Agent():
 		# Evaluate the performance of your agent over 100 episodes, by calculating cummulative rewards for the 100 episodes.
 		# Here you need to interact with the environment, irrespective of whether you are using a memory.
 		self.q_net.load_model(model_file)
-		
+		get_action = self.epsilon_greedy_policy(self.q_net,.05)
+		state = self.env.reset()
+		done = False
+		total_reward = 0
+		while not done:
+			action = get_action(state)
+			state, reward, done = self.env.step(action)
+			total_reward += reward
+		return total_reward
+
 
 	def burn_in_memory(self,burn_in=10000):
 		done = False
