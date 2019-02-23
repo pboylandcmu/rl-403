@@ -3,7 +3,7 @@ import keras, tensorflow as tf, numpy as np, gym, sys, copy, argparse
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.models import load_model
-from random import randint
+from numpy.random import randint
 
 
 class QNetwork():
@@ -213,7 +213,7 @@ class DQN_Agent():
 			e_greedy = self.epsilon_greedy_policy(self.q_net)
 			action = e_greedy(state)
 			old_state = state
-			state, reward, done = self.env.step(action)
+			state, reward, done, _ = self.env.step(action)
 
 			self.replay_memory.append((old_state,action,reward,state))
 			train_on = self.replay_memory.sample_batch()
@@ -234,7 +234,7 @@ class DQN_Agent():
 		total_reward = 0
 		while not done:
 			action = get_action(state)
-			state, reward, done = self.env.step(action)
+			state, reward, done, _ = self.env.step(action)
 			total_reward += reward
 		return total_reward
 
@@ -247,7 +247,7 @@ class DQN_Agent():
 				state = self.env.reset()
 			action = pol(state)
 			old_state = state
-			state, reward, done = self.env.step(action)
+			state, reward, done, _ = self.env.step(action)
 			self.replay_memory.append((old_state,action,reward,state))
 
 		# Initialize your replay memory with a burn_in number of episodes / transitions.
@@ -277,14 +277,14 @@ def main(args):
 	episodes = 10000
 	save_freq = 1500
 	# You want to create an instance of the DQN_Agent class here, and then train / test it.
-	dqn = DQN_Agent()
+	dqn = DQN_Agent('MountainCar-v0')
 	for i in range(episodes):
 		dqn.train()
 		if i % save_freq == 0:
 			dqn.q_net.save()
 	model_names = dqn.q_net.model_names()
 	rewards = [dqn.test(model_file) for model_name in model_names]
-	
+
 if __name__ == '__main__':
 	main(sys.argv)
 
