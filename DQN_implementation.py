@@ -144,6 +144,16 @@ class DQN_Agent():
 		self.q_net = QNetwork(environment_name)
 		self.replay_memory = Replay_Memory() 
 
+		self.epsilon = 0.5
+		self.epsilon_decay = 0.000004
+
+		if(environment_name == 'CartPole-v0'):
+			self.gamma = 0.99
+		elif(environment_name == 'MountainCar-v0'):
+			self.gamma = 1
+
+		self.burn_in_memory()
+
 	def epsilon_greedy_policy(self, q_values):
 		return lambda state : q_values.epsilon_greedy_action(state,self.epsilon)
 		# Creating epsilon greedy probabilities to sample from.
@@ -176,6 +186,7 @@ class DQN_Agent():
 			train_on = self.replay_memory.sample_batch()
 			q_pairs = [(s1,a,r + self.gamma * (self.q_net.q_value(s2))) for (s1,a,r,s2) in train_on]
 			self.q_net.fit(q_pairs)
+		self.epsilon -= self.epsilon_decay
 
 		pass
 
@@ -192,7 +203,7 @@ class DQN_Agent():
 		for _ in range(burn_in):
 			if done:
 				state = self.env.reset()
-			action = pol()
+			action = pol(state)
 			old_state = state
 			state, reward, done = self.env.step(action)
 			self.replay_memory.append((old_state,action,reward,state))
@@ -222,7 +233,16 @@ def main(args):
 	# Setting this as the default tensorflow session.
 	keras.backend.tensorflow_backend.set_session(sess)
 
+	episodes = 10000
+	save_freq = 1500
 	# You want to create an instance of the DQN_Agent class here, and then train / test it.
+	dqn = DQN_Agent()
+	for i in range(episodes):
+		dqn.train()
+		if i % save_freq == 0:
+			#save the model
+	model_names = dqn.q_net.model_names()
+	rewards = [dqn.test(model_file) for model_name in model_names]
 
 if __name__ == '__main__':
 	main(sys.argv)
