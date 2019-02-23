@@ -67,7 +67,14 @@ class QNetwork():
 	def load_model(self,model_file):
 		return load_model(model_file)
 
-	def fit(self,states,targets,epochs,verbosity=0):
+	def fit(self,D,epochs,verbosity=0):
+		states = []
+		targets = []
+		for (state,action,target) in D:
+			states.append(state)
+			out = self.model.predict(state)
+			out[action] = target
+			targets.append(out)
 		self.model.fit(x=states,y=targets,epochs=epochs,verbose=verbosity)
         #score = model.evaluate(states,actions)
         #print(score)
