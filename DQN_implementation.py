@@ -32,12 +32,12 @@ class QNetwork():
 			model.add(Dense(16, input_dim=4, activation='relu'))
 			model.add(Dense(16, activation='relu'))
 			model.add(Dense(16, activation='relu'))
-			model.add(Dense(2, activation='softmax'))
+			model.add(Dense(2, activation='linear'))
 		elif(environment_name == 'MountainCar-v0'):
 			model.add(Dense(16, input_dim=2, activation='relu'))
 			model.add(Dense(16, activation='relu'))
 			model.add(Dense(16, activation='relu'))
-			model.add(Dense(3, activation='softmax'))
+			model.add(Dense(3, activation='linear'))
 		model.compile(optimizer='Adam',
               loss='MSE',
               metrics=['accuracy'])
@@ -51,8 +51,8 @@ class QNetwork():
 	def epsilon_greedy_action(self,state,epsilon,model=None):
 		if(model is None):
 			model = self.model
-		if(epsilon >= np.random()):
-			return np.randint(0,self.num_actions)
+		if(epsilon >= np.random.uniform()):
+			return np.random.randint(0,self.num_actions)
 		else: return self.greedy_action(state,model)
 
 	def save_model(self,model_file):
@@ -60,6 +60,12 @@ class QNetwork():
 
 	def load_model(self, model_file):
 		return load_model(model_file)
+
+	def fit(self,states,targets,epochs,verbosity=0):
+		model.fit(x=states,y=targets,epochs=epochs,verbose=verbosity)
+        #score = model.evaluate(states,actions)
+        #print(score)
+        #return score[1]
 
 	'''
 	def load_model_weights(self,weight_file):
