@@ -67,7 +67,7 @@ class QNetwork():
 	def load_model(self,model_file):
 		return load_model(model_file)
 
-	def fit(self,D,epochs,verbosity=0):
+	def fit(self,D,epochs=1,verbosity=0):
 		states = []
 		targets = []
 		for (state,action,target) in D:
