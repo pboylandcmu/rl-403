@@ -48,6 +48,12 @@ class QNetwork():
 			model = self.model
 		return np.argmax(model.predict(state))
 
+	def q_value(self,state,model = None):
+		if(model is None):
+			model = self.model
+		out = model.predict(state)
+		return np.amax(out)
+
 	def epsilon_greedy_action(self,state,epsilon,model=None):
 		if(model is None):
 			model = self.model
@@ -58,7 +64,7 @@ class QNetwork():
 	def save_model(self,model_file):
 		self.model.save(model_file)
 
-	def load_model(self, model_file):
+	def load_model(self,model_file):
 		return load_model(model_file)
 
 	def fit(self,states,targets,epochs,verbosity=0):
