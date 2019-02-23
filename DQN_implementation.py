@@ -57,6 +57,8 @@ class QNetwork():
 	def load_model(self, model_file):
 		return load_model(model_file)
 
+
+
 	'''
 	def load_model_weights(self,weight_file):
 		# Helper funciton to load model weights.
@@ -147,9 +149,18 @@ class DQN_Agent():
 			old_state = state
 			state, reward, done = self.env.step(action)
 			self.replay_memory.append((old_state,action,reward,state))
+
+			train_on = self.replay_memory.sample_batch()
+
+			for (s1,a,r,s2) in train_on:
+				
+
+
+
 		pass
 
 	def test(self, model_file=None):
+
 		# Evaluate the performance of your agent over 100 episodes, by calculating cummulative rewards for the 100 episodes.
 		# Here you need to interact with the environment, irrespective of whether you are using a memory.
 		pass
