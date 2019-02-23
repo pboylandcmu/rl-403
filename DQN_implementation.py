@@ -5,6 +5,7 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.models import load_model
 from numpy.random import randint
+import time
 
 
 class QNetwork():
@@ -147,6 +148,8 @@ class Replay_Memory():
 			self.memory = [transition for _ in range(self.memsize)]
 		self.memory[self.counter] = transition
 		self.counter += 1
+		if self.counter >= self.memsize:
+			self.counter = 0
 		# Appends transition to the memory.
 
 class DQN_Agent():
@@ -220,14 +223,23 @@ class DQN_Agent():
 		done = False
 		state = self.env.reset()
 		e_greedy = self.epsilon_greedy_policy(self.q_net)
+
+		choosing_time = 0.
+		q_eval_time = 0.
+		fitting_time = 0.
 		while not done:
+			choosing_time -= time.time()
 			action = e_greedy(state)
+			choosing_time += time.time()
+
 			old_state = state
 			state, reward, done, _ = self.env.step(action)
 			
 			self.replay_memory.append((old_state,action,reward,state))
+			
 			train_on = self.replay_memory.sample_batch()
 			
+			q_eval_time -= time.time()
 			q_pairs = [(s1,a,r + self.gamma * (self.q_net.q_value(s2))) for (s1,a,r,s2) in train_on]
 			self.q_net.fit(q_pairs)
 			
