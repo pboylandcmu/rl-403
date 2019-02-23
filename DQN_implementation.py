@@ -38,7 +38,10 @@ class QNetwork():
 	def define_model(self,environment_name):
 		model = Sequential()
 		if(environment_name == 'CartPole-v0'):
-			model.add(Dense(40, input_dim=4, activation='tanh'))
+			model.add(Dense(40, input_dim=4, activation='relu'))
+			model.add(Dense(10, input_dim=4, activation='relu'))
+			model.add(Dense(10, activation='tanh'))
+			#model.add(Dense(16, activation='relu'))
 			model.add(Dense(2, activation='linear'))
 		elif(environment_name == 'MountainCar-v0'):
 			model.add(Dense(16, input_dim=2, activation='relu'))
@@ -138,15 +141,15 @@ class Replay_Memory():
 		return [self.memory[randint(0,self.counter)] for _ in range(batch_size)]
 		# This function returns a batch of randomly sampled transitions - i.e. state, action, reward, next state, terminal flag tuples.
 		# You will feed this to your model to train.
+		pass
 
 	def append(self, transition):
-		#transition is a 5-tuple of s,a,r,s,d
+		#transition is a 4-tuple of s,a,r,s
 		if self.memory is None:
 			self.memory = [transition for _ in range(self.memsize)]
 		self.memory[self.counter] = transition
 		self.counter += 1
 		if self.counter >= self.memsize:
-			self.full = True
 			self.counter = 0
 		# Appends transition to the memory.
 
@@ -187,7 +190,8 @@ class DQN_Agent():
 
 	def greedy_policy(self, q_values):
 		return lambda state : q_values.greedy_action(state)
-		# Creating greedy policy for test time.		
+		# Creating greedy policy for test time.
+		pass
 
 	def lookahead_policy(self,q_values,state):
 		best_action = 0
@@ -224,39 +228,26 @@ class DQN_Agent():
 		choosing_time = 0.
 		q_eval_time = 0.
 		fitting_time = 0.
-
-		tot_reward = 0
 		while not done:
+			self.env.render()
 			choosing_time -= time.time()
 			action = e_greedy(state)
 			choosing_time += time.time()
 
 			old_state = state
 			state, reward, done, _ = self.env.step(action)
-
-			tot_reward += reward
 			
-			self.replay_memory.append((old_state,action,reward,state,done))
+			self.replay_memory.append((old_state,action,reward,state))
 			
 			train_on = self.replay_memory.sample_batch()
 			
 			q_eval_time -= time.time()
-			q_pairs = [(s1,a,r if d else r + self.gamma * (self.q_net.q_value(s2))) for (s1,a,r,s2,d) in train_on]
-			q_eval_time += time.time()
-
-			fitting_time -= time.time()
+			q_pairs = [(s1,a,r + self.gamma * (self.q_net.q_value(s2))) for (s1,a,r,s2) in train_on]
 			self.q_net.fit(q_pairs)
-			fitting_time += time.time()
-
-			self.env.render()
-
-		print("choosing time is " + str(choosing_time))
-		print("q_eval time is " + str(q_eval_time))
-		print("fitting time is " + str(fitting_time))
 			
 		self.epsilon -= self.epsilon_decay
 
-		return tot_reward
+		pass
 
 	def test(self,episodes,model_file=None):
 		# Evaluate the performance of your agent over 100 episodes, by calculating cummulative rewards for the 100 episodes.
@@ -285,7 +276,7 @@ class DQN_Agent():
 			action = pol(state)
 			old_state = state
 			state, reward, done, _ = self.env.step(action)
-			self.replay_memory.append((old_state,action,reward,state,done))
+			self.replay_memory.append((old_state,action,reward,state))
 
 		# Initialize your replay memory with a burn_in number of episodes / transitions.
 
@@ -311,15 +302,13 @@ def main(args):
 	# Setting this as the default tensorflow session.
 	keras.backend.tensorflow_backend.set_session(sess)
 
-	episodes = 10000
+	episodes = 1000
 	save_freq = 150
 	# You want to create an instance of the DQN_Agent class here, and then train / test it.
-	dqn = DQN_Agent('CartPole-v0')
-	rewards = []
+	dqn = DQN_Agent('MountainCar-v0')
 	for i in range(episodes):
 		print(i)
-		rewards.append(dqn.train())
-		print("running average" + str(np.mean(rewards) if len(rewards) < 51 else rewards[-50:]))
+		dqn.train()
 		if (i + 1) % save_freq == 0:
 			dqn.q_net.save_model()
 			print("saved model after " + str(i) + " episodes.")
