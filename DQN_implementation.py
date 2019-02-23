@@ -65,7 +65,7 @@ class QNetwork():
         #put state in a list
 		s = []
 		s.append(state)
-		return model.predict(np.array(s))
+		return model.predict(np.array(s))[0]
 
 	def epsilon_greedy_action(self,state,epsilon,model=None):
 		if(model is None):
