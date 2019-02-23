@@ -43,10 +43,14 @@ class QNetwork():
               metrics=['accuracy'])
 		return model
 
-	def greedy_action(self,state,model=self.model):
+	def greedy_action(self,state,model=None):
+		if(model is None):
+			model = self.model
 		return np.argmax(model.predict(state))
 
-	def epsilon_greedy_action(self,state,epsilon,model=self.model):
+	def epsilon_greedy_action(self,state,epsilon,model=None):
+		if(model is None):
+			model = self.model
 		if(epsilon >= np.random()):
 			return np.randint(0,self.num_actions)
 		else: return self.greedy_action(state,model)
