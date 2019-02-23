@@ -19,9 +19,11 @@ class QNetwork():
 		if(environment_name == 'CartPole-v0'):
 			self.num_actions = 2
 			self.state_size = 4
+			self.learning_rate = 0.001
 		elif(environment_name == 'MountainCar-v0'):
 			self.num_actions = 3
 			self.state_size = 2
+			self.learning_rate = 0.0001
 		else:
 			print("Invalid environment name\nTry 'CartPole-v0' or 'MountainCar-v0")
 			exit(0)
@@ -140,7 +142,7 @@ class DQN_Agent():
 		# as well as training parameters - number of episodes / iterations, etc.
 		self.env = gym.make(environment_name)
 		self.q_net = QNetwork(environment_name)
-		self.replay_memory = Replay_Memory()
+		self.replay_memory = Replay_Memory() 
 
 	def epsilon_greedy_policy(self, q_values):
 		return lambda state : q_values.epsilon_greedy_action(state,self.epsilon)
@@ -169,11 +171,11 @@ class DQN_Agent():
 			action = e_greedy(state)
 			old_state = state
 			state, reward, done = self.env.step(action)
-			self.replay_memory.append((old_state,action,reward,state))
 
+			self.replay_memory.append((old_state,action,reward,state))
 			train_on = self.replay_memory.sample_batch()
 			q_pairs = [(s1,a,r + self.gamma * (self.q_net.q_value(s2))) for (s1,a,r,s2) in train_on]
-			
+			self.q_net.fit(q_pairs)
 
 		pass
 
