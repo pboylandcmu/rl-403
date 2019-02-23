@@ -16,7 +16,6 @@ class QNetwork():
 	def __init__(self, environment_name):
 		# Define your network architecture here. It is also a good idea to define any training operations
 		# and optimizers here, initialize your variables, or alternately compile your model here.
-		self.model = self.define_model(environment_name)
 		if(environment_name == 'CartPole-v0'):
 			self.num_actions = 2
 			self.state_size = 4
@@ -28,6 +27,9 @@ class QNetwork():
 		else:
 			print("Invalid environment name\nTry 'CartPole-v0' or 'MountainCar-v0")
 			exit(0)
+			
+		self.model = self.define_model(environment_name)
+
 		self.file_count = 0
 		self.file_name = "saved_model"
 		self.model_names = []
