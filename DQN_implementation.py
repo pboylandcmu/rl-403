@@ -288,12 +288,12 @@ def main(args):
 	keras.backend.tensorflow_backend.set_session(sess)
 
 	episodes = 1000
-	save_freq = 1
+	save_freq = 150
 	# You want to create an instance of the DQN_Agent class here, and then train / test it.
 	dqn = DQN_Agent('MountainCar-v0')
 	for i in range(episodes):
 		dqn.train()
-		if i % save_freq == 0:
+		if (i + 1) % save_freq == 0:
 			dqn.q_net.save_model()
 			print("saved model after " + str(i) + " episodes.")
 	print("training done")
