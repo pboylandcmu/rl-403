@@ -187,8 +187,7 @@ class DQN_Agent():
 
 	def greedy_policy(self, q_values):
 		return lambda state : q_values.greedy_action(state)
-		# Creating greedy policy for test time.
-		pass
+		# Creating greedy policy for test time.		
 
 	def lookahead_policy(self,q_values,state):
 		best_action = 0
@@ -320,7 +319,7 @@ def main(args):
 	for i in range(episodes):
 		print(i)
 		rewards.append(dqn.train())
-		print("running average" + str(np.mean(rewards)))
+		print("running average" + str(np.mean(rewards) if len(rewards) < 51 else rewards[-50:]))
 		if (i + 1) % save_freq == 0:
 			dqn.q_net.save_model()
 			print("saved model after " + str(i) + " episodes.")
