@@ -228,6 +228,7 @@ class DQN_Agent():
 			'''
 			self.replay_memory.append((old_state,action,reward,state))
 			train_on = self.replay_memory.sample_batch()
+			
 			q_pairs = [(s1,a,r + self.gamma * (self.q_net.q_value(s2))) for (s1,a,r,s2) in train_on]
 			
 			self.q_net.fit(q_pairs)
@@ -294,6 +295,7 @@ def main(args):
 	# You want to create an instance of the DQN_Agent class here, and then train / test it.
 	dqn = DQN_Agent('MountainCar-v0')
 	for i in range(episodes):
+		print(i)
 		dqn.train()
 		if (i + 1) % save_freq == 0:
 			dqn.q_net.save_model()
