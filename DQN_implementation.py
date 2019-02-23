@@ -100,7 +100,7 @@ class QNetwork():
 			out = self.predict(state,self.model)
 			out[action] = target
 			targets.append(out)
-		self.model.fit(x=np.array(states),y=np.array(targets),epochs=epochs,verbose=verbosity,lr = self.learning_rate)
+		self.model.fit(x=np.array(states),y=np.array(targets),epochs=epochs,verbose=verbosity)
         #score = model.evaluate(states,targets)
         #print(score)
         #return score[1]
@@ -289,8 +289,8 @@ def main(args):
 	for i in range(episodes):
 		dqn.train()
 		if i % save_freq == 0:
-			dqn.q_net.save()
-	model_names = dqn.q_net.model_names()
+			dqn.q_net.save_model()
+	model_names = dqn.q_net.get_model_names()
 	rewards = [dqn.test(model_file) for model_name in model_names]
 	
 if __name__ == '__main__':
