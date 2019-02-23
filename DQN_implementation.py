@@ -67,7 +67,9 @@ class QNetwork():
 		else: return self.greedy_action(state,model)
 
 
-	def save_model(self,model_file=self.file_name):
+	def save_model(self,model_file=None):
+		if(model_file is None):
+			model_file = self.file_name
 		name = format(model_file + str(self.file_count) + ".h5")
 		self.model.save(name)
 		self.model_names.append(name)
