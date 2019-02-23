@@ -73,7 +73,7 @@ class QNetwork():
 
 class Replay_Memory():
 
-	def __init__(self, memory_size=50000, burn_in=10000):
+	def __init__(self, memory_size=50000):
 		self.memory = None
 		self.memsize = memory_size
 		self.counter = 0
@@ -96,16 +96,12 @@ class Replay_Memory():
 		pass
 
 	def append(self, transition):
+		#transition is a 4-tuple of s,a,r,s
 		if self.memory is None:
-			self.memory = [transition[0] for _ in range(self.memsize)]
-		for i in range(len(transition)):
-			self.memory[self.counter] = transition[i]
-			self.counter += 1
-			if self.counter > self.memsize:
-				self.counter = 0
-				self.full = True
+			self.memory = [transition for _ in range(self.memsize)]
+		self.memory[self.counter] = transition
+		self.counter += 1
 		# Appends transition to the memory.
-		pass
 
 class DQN_Agent():
 
@@ -137,6 +133,9 @@ class DQN_Agent():
 		# Creating greedy policy for test time.
 		pass
 
+	def random_policy(self):
+		return lambda state : randint(0,self.q_net.num_actions)
+
 	def train(self):
 		# In this function, we will train our network.
 		# If training without experience replay_memory, then you will interact with the environment
@@ -159,9 +158,19 @@ class DQN_Agent():
 		# Here you need to interact with the environment, irrespective of whether you are using a memory.
 		pass
 
-	def burn_in_memory(self):
+	def burn_in_memory(self,burn_in=10000):
+		done = False
+		pol = self.random_policy()
+		state = self.env.reset()
+		for _ in range(burn_in):
+			if done:
+				state = self.env.reset()
+			action = pol()
+			old_state = state
+			state, reward, done = self.env.step(action)
+			self.replay_memory.append((old_state,action,reward,state))
+
 		# Initialize your replay memory with a burn_in number of episodes / transitions.
-		pass
 
 
 
