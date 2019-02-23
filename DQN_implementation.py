@@ -291,7 +291,7 @@ def main(args):
 		if i % save_freq == 0:
 			dqn.q_net.save_model()
 	model_names = dqn.q_net.get_model_names()
-	rewards = [dqn.test(model_file) for model_name in model_names]
+	rewards = [dqn.test(model_name) for model_name in model_names]
 	
 if __name__ == '__main__':
 	main(sys.argv)
