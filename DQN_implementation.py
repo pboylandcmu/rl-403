@@ -234,7 +234,6 @@ class DQN_Agent():
 		pass
 
 	def test(self,episodes,model_file=None):
-
 		# Evaluate the performance of your agent over 100 episodes, by calculating cummulative rewards for the 100 episodes.
 		# Here you need to interact with the environment, irrespective of whether you are using a memory.
 		self.q_net.load_model(model_file)
