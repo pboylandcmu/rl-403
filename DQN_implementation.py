@@ -31,7 +31,7 @@ class QNetwork():
 		self.model = self.define_model(environment_name)
 
 		self.file_count = 0
-		self.file_name = "saved_model"
+		self.file_name = "models/saved_model"
 		self.model_names = []
 
 	def define_model(self,environment_name):
@@ -284,16 +284,18 @@ def main(args):
 	# Setting this as the default tensorflow session.
 	keras.backend.tensorflow_backend.set_session(sess)
 
-	episodes = 10000
-	save_freq = 1500
+	episodes = 1000
+	save_freq = 1
 	# You want to create an instance of the DQN_Agent class here, and then train / test it.
 	dqn = DQN_Agent('MountainCar-v0')
 	for i in range(episodes):
 		dqn.train()
 		if i % save_freq == 0:
 			dqn.q_net.save_model()
+			print("saved model after " + str(i) + " episodes.")
+	print("training done")
 	model_names = dqn.q_net.get_model_names()
-	rewards = [dqn.test(model_name) for model_name in model_names]
+	rewards = [np.mean(dqn.test(model_name,20)) for model_name in model_names]
 	
 if __name__ == '__main__':
 	main(sys.argv)
