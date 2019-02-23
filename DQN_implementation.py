@@ -92,7 +92,7 @@ class QNetwork():
 			out = self.model.predict(state)
 			out[action] = target
 			targets.append(out)
-		self.model.fit(x=states,y=targets,epochs=epochs,verbose=verbosity,lr = self.learning_rate)
+		self.model.fit(x=np.array(states),y=np.array(targets),epochs=epochs,verbose=verbosity,lr = self.learning_rate)
         #score = model.evaluate(states,targets)
         #print(score)
         #return score[1]
@@ -195,7 +195,6 @@ class DQN_Agent():
 				if(value > best_value):
 					best_value = value
 					best_action = a
-
 		return best_action
 
 	def random_policy(self):
