@@ -224,15 +224,13 @@ class DQN_Agent():
 			action = e_greedy(state)
 			old_state = state
 			state, reward, done, _ = self.env.step(action)
-
-			'''
+			
 			self.replay_memory.append((old_state,action,reward,state))
 			train_on = self.replay_memory.sample_batch()
 			
 			q_pairs = [(s1,a,r + self.gamma * (self.q_net.q_value(s2))) for (s1,a,r,s2) in train_on]
-			
 			self.q_net.fit(q_pairs)
-			'''
+			
 		self.epsilon -= self.epsilon_decay
 
 		pass
