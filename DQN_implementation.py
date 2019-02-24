@@ -38,12 +38,14 @@ class QNetwork():
 	def define_model(self,environment_name):
 		model = Sequential()
 		if(environment_name == 'CartPole-v0'):
-			model.add(Dense(40, input_dim=4, activation='tanh'))
+			model.add(Dense(40, input_dim=4, activation='relu'))
+			model.add(Dense(40, activation='relu'))
+			model.add(Dense(40, activation='relu'))
 			model.add(Dense(2, activation='linear'))
 		elif(environment_name == 'MountainCar-v0'):
-			model.add(Dense(16, input_dim=2, activation='relu'))
-			model.add(Dense(16, activation='relu'))
-			model.add(Dense(16, activation='relu'))
+			model.add(Dense(40, input_dim=2, activation='relu'))
+			model.add(Dense(40, activation='relu'))
+			model.add(Dense(40, activation='relu'))
 			model.add(Dense(3, activation='linear'))
 		model.compile(optimizer=keras.optimizers.Adam(lr=self.learning_rate),
               loss='MSE',
@@ -67,6 +69,15 @@ class QNetwork():
 		s = []
 		s.append(state)
 		return model.predict(np.array(s))[0]
+
+	def batch_predict_values(self,states,model=None):
+		if(model is None):
+			model = self.model
+		predictions = model.predict(states)
+		res = []
+		for prediction in predictions:
+			res.append(np.amax(prediction))
+		return res
 
 	def epsilon_greedy_action(self,state,epsilon,model=None):
 		if(model is None):
@@ -187,6 +198,7 @@ class DQN_Agent():
 
 	def greedy_policy(self, q_values):
 		return lambda state : q_values.greedy_action(state)
+		# Creating greedy policy for test time.		
 
 	def lookahead_policy(self,q_values,state):
 		best_action = 0
@@ -231,7 +243,8 @@ class DQN_Agent():
 			choosing_time += time.time()
 
 			old_state = state
-			state, reward, done, _ = self.env.step(action)			
+			state, reward, done, _ = self.env.step(action)
+
 			tot_reward += reward
 			
 			self.replay_memory.append((old_state,action,reward,state,done))
@@ -239,7 +252,14 @@ class DQN_Agent():
 			train_on = self.replay_memory.sample_batch()
 			
 			q_eval_time -= time.time()
-			q_pairs = [(s1,a,r if d else r + self.gamma * (self.q_net.q_value(s2))) for (s1,a,r,s2,d) in train_on]
+			states = [s for (_,_,_,s,_) in train_on]
+			values = [v for v in self.q_net.batch_predict_values(np.array(states))]
+			q_pairs = []
+			for i in range(len(train_on)):
+				(s1,a,r,s2,d) = train_on[i]
+				reward = r if d else r + self.gamma * values[i]
+				q_pairs.append((s1,a,r))
+			#q_pairs = [(s1,a,r if d else r + self.gamma * values[]) for (s1,a,r,s2,d) in train_on]
 			q_eval_time += time.time()
 
 			fitting_time -= time.time()
@@ -312,12 +332,13 @@ def main(args):
 	episodes = 10000
 	save_freq = 150
 	# You want to create an instance of the DQN_Agent class here, and then train / test it.
-	dqn = DQN_Agent('CartPole-v0')
+	#dqn = DQN_Agent('CartPole-v0')
+	dqn = DQN_Agent('MountainCar-v0')
 	rewards = []
 	for i in range(episodes):
 		print(i)
 		rewards.append(dqn.train())
-		print("running average" + str(np.mean(rewards) if len(rewards) < 51 else rewards[-50:]))
+		print("running average " + str(np.mean(rewards) if len(rewards) < 51 else np.mean(rewards[-50:])))
 		if (i + 1) % save_freq == 0:
 			dqn.q_net.save_model()
 			print("saved model after " + str(i) + " episodes.")
