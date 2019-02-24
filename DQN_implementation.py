@@ -310,11 +310,11 @@ class DQN_Agent():
 
 		# Initialize your replay memory with a burn_in number of episodes / transitions.
 	
-	def q_b(self,dir,file_base,count):
+	def q_b(self,dir,file_base,model_count):
 		y = []
 		x = []
 		count = 150
-		for i in range(1,count+1):
+		for i in range(1,model_count+1):
 			file_name = dir + os.sep + file_base + str(i) + '.h5'
 			rewards = self.test(20,file_name)
 			print(str(150*i) + " episodes : mean = " + str(np.mean(rewards)))
