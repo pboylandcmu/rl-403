@@ -92,10 +92,12 @@ class QNetwork():
 	def save_model(self,model_file=None):
 		if(model_file is None):
 			model_file = self.file_name
-		self.file_count += 1
-		name = format(model_file + str(self.file_count) + ".h5")
+			self.file_count += 1
+			name = format(model_file + str(self.file_count) + ".h5")
+			self.model_names.append(name)
+		else:
+			name = model_file
 		self.model.save(name)
-		self.model_names.append(name)
 		return name
 
 	def load_model(self,model_file):
@@ -174,13 +176,17 @@ class DQN_Agent():
 	# (4) Create a function to test the Q Network's performance on the environment.
 	# (5) Create a function for Experience Replay.
 
-	def __init__(self, environment_name, render=False):
+	def __init__(self, environment_name, render=False,q_flag=1):
 
 		# Create an instance of the network itself, as well as the memory.
 		# Here is also a good place to set environmental parameters,
 		# as well as training parameters - number of episodes / iterations, etc.
 		self.env = gym.make(environment_name)
 		self.q_net = QNetwork(environment_name)
+		if(q_flag == 1):
+			self.q_value_estimator = self.q_net
+		else:
+			self.q_value_estimator = QNetwork(environment_name)
 		self.replay_memory = Replay_Memory() 
 
 		self.epsilon = 0.5
@@ -224,6 +230,12 @@ class DQN_Agent():
 	def random_policy(self):
 		return lambda state : randint(0,self.q_net.num_actions)
 
+	def update_slow_network(self):
+		if(self.q_net is self.q_value_estimator):
+			return
+		self.q_net.save_model('fast_DQN.h5')
+		self.q_value_estimator.load_model('fast_DQN.h5')
+
 	def train(self):
 		# In this function, we will train our network.
 		# If training without experience replay_memory, then you will interact with the environment
@@ -256,7 +268,7 @@ class DQN_Agent():
 			
 			q_eval_time -= time.time()
 			states = [s for (_,_,_,s,_) in train_on]
-			values = self.q_net.batch_predict_values(np.array(states))
+			values = self.q_value_estimator.batch_predict_values(np.array(states))
 			q_pairs = []
 			for i in range(len(train_on)):
 				(s1,a,r,s2,d) = train_on[i]
@@ -268,6 +280,7 @@ class DQN_Agent():
 			fitting_time -= time.time()
 			self.q_net.fit(q_pairs)
 			fitting_time += time.time()
+
 
 			#self.env.render()
 
