@@ -317,14 +317,15 @@ class DQN_Agent():
 		for i in range(1,count+1):
 			file_name = dir + os.sep + file_base + str(i) + '.h5'
 			rewards = self.test(20,file_name)
+			print(str(150*i) + " episodes : mean = " + str(np.mean(rewards)))
 			y.append(np.mean(rewards))
 			x.append(count)
 			count += 150
 		plt.plot(x,y)
 		plt.xlabel("episodes")
 		plt.ylabel("average reward")
-		plt.title("Performance plot")
-		plt.show
+		plt.title(self.environment_name + " Performance plot")
+		plt.show()
 
 
 def parse_arguments():
