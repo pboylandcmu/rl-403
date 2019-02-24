@@ -32,15 +32,15 @@ class QNetwork():
 		self.model = self.define_model(environment_name)
 
 		self.file_count = 0
-		self.file_name = "models/saved_model"
+		self.file_name = "models8/saved_model"
 		self.model_names = []
 
 	def define_model(self,environment_name):
 		model = Sequential()
 		if(environment_name == 'CartPole-v0'):
-			model.add(Dense(40, input_dim=4, activation='relu'))
-			model.add(Dense(40, activation='relu'))
-			model.add(Dense(40, activation='relu'))
+			model.add(Dense(80, input_dim=4, activation='relu'))
+			model.add(Dense(80, activation='relu'))
+			model.add(Dense(80, activation='relu'))
 			model.add(Dense(2, activation='linear'))
 		elif(environment_name == 'MountainCar-v0'):
 			model.add(Dense(40, input_dim=2, activation='relu'))
@@ -266,11 +266,11 @@ class DQN_Agent():
 			self.q_net.fit(q_pairs)
 			fitting_time += time.time()
 
-			self.env.render()
+			#self.env.render()
 
-		print("choosing time is " + str(choosing_time))
-		print("q_eval time is " + str(q_eval_time))
-		print("fitting time is " + str(fitting_time))
+		#print("choosing time is " + str(choosing_time))
+		#print("q_eval time is " + str(q_eval_time))
+		#print("fitting time is " + str(fitting_time))
 			
 		self.epsilon -= self.epsilon_decay
 
