@@ -231,6 +231,8 @@ class DQN_Agent():
 		return lambda state : randint(0,self.q_net.num_actions)
 
 	def update_slow_network(self):
+		if(self.q_net is self.q_value_estimator):
+			return
 		self.q_net.save_model('fast_DQN.h5')
 		self.q_value_estimator.load_model('fast_DQN.h5')
 
