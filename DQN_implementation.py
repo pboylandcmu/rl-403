@@ -237,7 +237,7 @@ class DQN_Agent():
 		self.q_net.save_model('fast_DQN.h5')
 		self.q_value_estimator.load_model('fast_DQN.h5')
 
-	def train(self):
+	def train(self,lookahead=False):
 		# In this function, we will train our network.
 		# If training without experience replay_memory, then you will interact with the environment
 		# in this function, while also updating your network parameters.
@@ -255,7 +255,9 @@ class DQN_Agent():
 		tot_reward = 0
 		while not done:
 			choosing_time -= time.time()
-			action = e_greedy(state)
+			if(lookahead):
+				action = self.lookahead_policy(self.q_net,state)
+			else: action = e_greedy(state)
 			choosing_time += time.time()
 
 			old_state = state
