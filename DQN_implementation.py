@@ -6,6 +6,8 @@ from keras.layers import Dense
 from keras.models import load_model
 from numpy.random import randint
 import time
+import os
+import matplotlib.pyplot as plt
 
 
 class QNetwork():
@@ -32,7 +34,7 @@ class QNetwork():
 		self.model = self.define_model(environment_name)
 
 		self.file_count = 0
-		self.file_name = "models/saved_model"
+		self.file_name = "models_/saved_model"
 		self.model_names = []
 
 	def define_model(self,environment_name):
@@ -99,7 +101,7 @@ class QNetwork():
 	def load_model(self,model_file):
 		if(model_file is None):
 			return
-		self.model =  load_model(model_file)
+		self.model = load_model(model_file)
 
 	def get_model_names(self):
 		return self.model_names
@@ -183,6 +185,7 @@ class DQN_Agent():
 
 		self.epsilon = 0.5
 		self.epsilon_decay = 0.000004
+		self.environment_name = environment_name
 
 		if(environment_name == 'CartPole-v0'):
 			self.gamma = 0.99
@@ -266,7 +269,7 @@ class DQN_Agent():
 			self.q_net.fit(q_pairs)
 			fitting_time += time.time()
 
-			self.env.render()
+			#self.env.render()
 
 		print("choosing time is " + str(choosing_time))
 		print("q_eval time is " + str(q_eval_time))
@@ -306,6 +309,22 @@ class DQN_Agent():
 			self.replay_memory.append((old_state,action,reward,state,done))
 
 		# Initialize your replay memory with a burn_in number of episodes / transitions.
+	
+	def q_b(self,dir,file_base,count):
+		y = []
+		x = []
+		count = 150
+		for i in range(1,count+1):
+			file_name = dir + os.sep + file_base + str(i) + '.h5'
+			rewards = self.test(20,file_name)
+			y.append(np.mean(rewards))
+			x.append(count)
+			count += 150
+		plt.plot(x,y)
+		plt.xlabel("episodes")
+		plt.ylabel("average reward")
+		plt.title("Performance plot")
+		plt.show
 
 
 def parse_arguments():
@@ -332,9 +351,10 @@ def main(args):
 	episodes = 10000
 	save_freq = 150
 	# You want to create an instance of the DQN_Agent class here, and then train / test it.
-	dqn = DQN_Agent('CartPole-v0')
-	#dqn = DQN_Agent('MountainCar-v0')
-	rewards = []
+	#dqn = DQN_Agent('CartPole-v0')
+	dqn = DQN_Agent('MountainCar-v0')
+	dqn.q_b('models','saved_model',66)
+	'''rewards = []
 	for i in range(episodes):
 		print(i)
 		rewards.append(dqn.train())
@@ -344,7 +364,8 @@ def main(args):
 			print("saved model after " + str(i) + " episodes.")
 	print("training done")
 	model_names = dqn.q_net.get_model_names()
-	rewards = [np.mean(dqn.test(model_name,20)) for model_name in model_names]
+	rewards = [np.mean(dqn.test(model_name,20)) for model_name in model_names]'''
+
 	
 if __name__ == '__main__':
 	main(sys.argv)
