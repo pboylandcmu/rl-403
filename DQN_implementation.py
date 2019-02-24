@@ -253,13 +253,13 @@ class DQN_Agent():
 			
 			q_eval_time -= time.time()
 			states = [s for (_,_,_,s,_) in train_on]
-			values = [v for v in self.q_net.batch_predict_values(np.array(states))]
+			values = self.q_net.batch_predict_values(np.array(states))
 			q_pairs = []
 			for i in range(len(train_on)):
 				(s1,a,r,s2,d) = train_on[i]
 				reward = r if d else r + self.gamma * values[i]
-				q_pairs.append((s1,a,r))
-			#q_pairs = [(s1,a,r if d else r + self.gamma * values[]) for (s1,a,r,s2,d) in train_on]
+				q_pairs.append((s1,a,reward))
+			
 			q_eval_time += time.time()
 
 			fitting_time -= time.time()
@@ -332,8 +332,8 @@ def main(args):
 	episodes = 10000
 	save_freq = 150
 	# You want to create an instance of the DQN_Agent class here, and then train / test it.
-	#dqn = DQN_Agent('CartPole-v0')
-	dqn = DQN_Agent('MountainCar-v0')
+	dqn = DQN_Agent('CartPole-v0')
+	#dqn = DQN_Agent('MountainCar-v0')
 	rewards = []
 	for i in range(episodes):
 		print(i)
