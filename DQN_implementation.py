@@ -354,7 +354,7 @@ def main(args):
 	# You want to create an instance of the DQN_Agent class here, and then train / test it.
 	dqn = DQN_Agent('CartPole-v0')
 	#dqn = DQN_Agent('MountainCar-v0')
-	dqn.q_b('models','saved_model',66)
+	dqn.q_b('models8','saved_model',66)
 	'''rewards = []
 	for i in range(episodes):
 		print(i)
