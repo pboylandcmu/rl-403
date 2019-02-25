@@ -16,7 +16,7 @@ class QNetwork():
 	# The network should take in state of the world as an input,
 	# and output Q values of the actions available to the agent as the output.
 
-	def __init__(self, environment_name):
+	def __init__(self, environment_name,qflag = 1):
 		# Define your network architecture here. It is also a good idea to define any training operations
 		# and optimizers here, initialize your variables, or alternately compile your model here.
 		if(environment_name == 'CartPole-v0'):
@@ -109,14 +109,13 @@ class QNetwork():
 		return self.model_names
 
 	def fit(self,D,epochs=1,verbosity=0):
-		states = []
-		targets = []
-		for (state,action,target) in D:
-			states.append(state)
-			out = self.predict(state,self.model)
+		states = [state for (state,_,_) in D]
+		outs = self.model.predict(np.array(states))
+		for i in range(len(D)):
+			out = outs[i]
+			(_,action,target) = D[i]
 			out[action] = target
-			targets.append(out)
-		self.model.fit(x=np.array(states),y=np.array(targets),epochs=epochs,verbose=verbosity)
+		self.model.fit(x=np.array(states),y=np.array(outs),epochs=epochs,verbose=verbosity)
         #score = model.evaluate(states,targets)
         #print(score)
         #return score[1]
@@ -182,7 +181,7 @@ class DQN_Agent():
 		# Here is also a good place to set environmental parameters,
 		# as well as training parameters - number of episodes / iterations, etc.
 		self.env = gym.make(environment_name)
-		self.q_net = QNetwork(environment_name)
+		self.q_net = QNetwork(environment_name,qflag = q_flag)
 		if(q_flag == 1):
 			self.q_value_estimator = self.q_net
 		else:
@@ -237,7 +236,7 @@ class DQN_Agent():
 		self.q_net.save_model('fast_DQN2.h5')
 		self.q_value_estimator.load_model('fast_DQN2.h5')
 
-	def train(self):
+	def train(self,lookahead=False):
 		# In this function, we will train our network.
 		# If training without experience replay_memory, then you will interact with the environment
 		# in this function, while also updating your network parameters.
@@ -255,7 +254,9 @@ class DQN_Agent():
 		tot_reward = 0
 		while not done:
 			choosing_time -= time.time()
-			action = e_greedy(state)
+			if(lookahead):
+				action = self.lookahead_policy(self.q_net,state)
+			else: action = e_greedy(state)
 			choosing_time += time.time()
 
 			old_state = state
