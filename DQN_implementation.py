@@ -34,7 +34,7 @@ class QNetwork():
 		self.model = self.define_model(environment_name)
 
 		self.file_count = 0
-		self.file_name = "models-double/saved_model"
+		self.file_name = "models-double-slow-rms/saved_model"
 		self.model_names = []
 
 	def define_model(self,environment_name):
@@ -197,7 +197,7 @@ class DQN_Agent():
 			self.gamma = 0.99
 		elif(environment_name == 'MountainCar-v0'):
 			self.gamma = 1
-		self.pass_freq = 50
+		self.pass_freq = 150
 
 		self.burn_in_memory()
 
@@ -234,8 +234,8 @@ class DQN_Agent():
 	def update_slow_network(self):
 		if(self.q_net is self.q_value_estimator):
 			return
-		self.q_net.save_model('fast_DQN.h5')
-		self.q_value_estimator.load_model('fast_DQN.h5')
+		self.q_net.save_model('fast_DQN2.h5')
+		self.q_value_estimator.load_model('fast_DQN2.h5')
 
 	def train(self):
 		# In this function, we will train our network.
@@ -368,8 +368,8 @@ def main(args):
 	# You want to create an instance of the DQN_Agent class here, and then train / test it.
 	dqn = DQN_Agent('CartPole-v0',q_flag=2)
 	#dqn = DQN_Agent('MountainCar-v0')
-	#dqn.q_b('models8','saved_model',66)
-	rewards = []
+	dqn.q_b('models-double-slow-rms','saved_model',66)
+	'''rewards = []
 	for i in range(episodes):
 		print(i)
 		rewards.append(dqn.train())
@@ -379,7 +379,7 @@ def main(args):
 			print("saved model after " + str(i) + " episodes.")
 		if (i + 1) % dqn.pass_freq == 0:
 			dqn.update_slow_network()
-	print("training done")
+	print("training done")'''
 
 	
 if __name__ == '__main__':

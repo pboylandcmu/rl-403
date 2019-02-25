@@ -3,3 +3,4 @@ models8/
 models-double/
 model-copies/
 fast_DQN.h5
+.DS_Store
