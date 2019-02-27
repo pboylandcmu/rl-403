@@ -241,11 +241,10 @@ class DQN_Agent():
 		# transitions to memory, while also updating your model.
 		done = False
 		state = self.env.reset()
-		e_greedy = self.epsilon_greedy_policy(self.q_net)
 
 		tot_reward = 0
 		while not done:
-			action = e_greedy(state)
+			action = self.q_net.epsilon_greedy_action(state,self.epsilon)
 
 			old_state = state
 			state, reward, done, _ = self.env.step(action)
@@ -278,7 +277,6 @@ class DQN_Agent():
 		# Evaluate the performance of your agent over 100 episodes, by calculating cummulative rewards for the 100 episodes.
 		# Here you need to interact with the environment, irrespective of whether you are using a memory.
 		self.q_net.load_model(model_file)
-		get_action = self.epsilon_greedy_policy(self.q_net,0)
 		total_rewards = []
 		for _ in range(episodes):
 			state = self.env.reset()
@@ -287,7 +285,7 @@ class DQN_Agent():
 			while not done:
 				if(lookahead):
 					action = self.lookahead_policy(self.q_net,state)
-				else: action = get_action(state)
+				else: action = q_net.epsilon_greedy_action(state,0)
 				state, reward, done, _ = self.env.step(action)
 				total_reward += reward
 			total_rewards.append(total_reward)
@@ -349,8 +347,8 @@ def main(args):
 	episodes = 10000
 	save_freq = 150
 	# You want to create an instance of the DQN_Agent class here, and then train / test it.
-	#dqn = DQN_Agent('CartPole-v0',q_flag=2)
-	dqn = DQN_Agent('MountainCar-v0',q_flag=0)
+	dqn = DQN_Agent('CartPole-v0',q_flag=2)
+	#dqn = DQN_Agent('MountainCar-v0',q_flag=0)
 	#dqn.q_b('models','saved_model',66)
 	rewards = []
 	for i in range(episodes):
