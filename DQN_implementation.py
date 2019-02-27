@@ -295,7 +295,8 @@ class DQN_Agent():
 			while not done:
 				if(lookahead):
 					action = self.lookahead_policy(self.q_net,state)
-				else: action = q_net.epsilon_greedy_action(state,0)
+				else: 
+					action = self.q_net.epsilon_greedy_action(state,0)
 				state, reward, done, _ = self.env.step(action)
 				total_reward += reward
 			total_rewards.append(total_reward)
