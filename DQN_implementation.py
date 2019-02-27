@@ -34,7 +34,7 @@ class QNetwork():
 		self.model = self.define_model(environment_name)
 
 		self.file_count = 0
-		self.file_name = "models-double-slow-rms/saved_model"
+		self.file_name = "models-single-adam/saved_model"
 		self.model_names = []
 
 	def define_model(self,environment_name):
@@ -50,20 +50,15 @@ class QNetwork():
 			model.add(Dense(40, activation='relu'))
 			model.add(Dense(3, activation='linear'))
 		model.compile(optimizer=keras.optimizers.Adam(lr=self.learning_rate),
-              loss='MSE',
-              metrics=['accuracy'])
+              loss='MSE')
 		return model
 
-	def greedy_action(self,state,model=None):
-		if(model is None):
-			model = self.model
-		out = self.predict(state,model)
+	def greedy_action(self,state):
+		out = self.predict(state,self.model)
 		return np.argmax(out)
 
-	def q_value(self,state,model = None):
-		if(model is None):
-			model = self.model
-		out = self.predict(state,model)
+	def q_value(self,state):
+		out = self.predict(state,self.model)
 		return np.amax(out)
 
 	def predict(self,state,model):
@@ -72,21 +67,16 @@ class QNetwork():
 		s.append(state)
 		return model.predict(np.array(s))[0]
 
-	def batch_predict_values(self,states,model=None):
-		if(model is None):
-			model = self.model
-		predictions = model.predict(states)
-		res = []
-		for prediction in predictions:
-			res.append(np.amax(prediction))
-		return res
+	def batch_predict_values(self,states):
+		predictions = self.model.predict(states)
+
+		return [np.amax(prediction) for prediction in predictions]
 
 	def epsilon_greedy_action(self,state,epsilon,model=None):
-		if(model is None):
-			model = self.model
 		if(epsilon >= np.random.uniform()):
 			return np.random.randint(0,self.num_actions)
-		else: return self.greedy_action(state,model)
+		else:
+			return self.greedy_action(state)
 
 
 	def save_model(self,model_file=None):
@@ -109,12 +99,13 @@ class QNetwork():
 		return self.model_names
 
 	def fit(self,D,epochs=1,verbosity=0):
+		#D is a bunch of (state,action,target-q)
+
 		states = [state for (state,_,_) in D]
 		outs = self.model.predict(np.array(states))
 		for i in range(len(D)):
-			out = outs[i]
 			(_,action,target) = D[i]
-			out[action] = target
+			outs[i][action] = target
 		self.model.fit(x=np.array(states),y=np.array(outs),epochs=epochs,verbose=verbosity)
         #score = model.evaluate(states,targets)
         #print(score)
@@ -175,7 +166,7 @@ class DQN_Agent():
 	# (4) Create a function to test the Q Network's performance on the environment.
 	# (5) Create a function for Experience Replay.
 
-	def __init__(self, environment_name, render=False,q_flag=1):
+	def __init__(self, environment_name, render=False,q_flag=1,eps=0.5,eps_decay=0.000025):
 
 		# Create an instance of the network itself, as well as the memory.
 		# Here is also a good place to set environmental parameters,
@@ -188,8 +179,8 @@ class DQN_Agent():
 			self.q_value_estimator = QNetwork(environment_name)
 		self.replay_memory = Replay_Memory() 
 
-		self.epsilon = 0.5
-		self.epsilon_decay = 0.000045
+		self.epsilon = eps
+		self.epsilon_decay = eps_decay
 		self.environment_name = environment_name
 
 		if(environment_name == 'CartPole-v0'):
@@ -200,13 +191,13 @@ class DQN_Agent():
 
 		self.burn_in_memory()
 
-	def epsilon_greedy_policy(self, q_values,epsilon = None):
+	def epsilon_greedy_policy(self, q_net,epsilon = None):
 		if(epsilon is None):
 			epsilon = self.epsilon
-		return lambda state : q_values.epsilon_greedy_action(state,epsilon)
+		return lambda state : q_net.epsilon_greedy_action(state,epsilon)
 
-	def greedy_policy(self, q_values):
-		return lambda state : q_values.greedy_action(state)
+	def greedy_policy(self, q_net):
+		return lambda state : q_net.greedy_action(state)
 		# Creating greedy policy for test time.		
 
 	def lookahead_policy(self,q_values,state):
@@ -247,17 +238,11 @@ class DQN_Agent():
 		state = self.env.reset()
 		e_greedy = self.epsilon_greedy_policy(self.q_net)
 
-		choosing_time = 0.
-		q_eval_time = 0.
-		fitting_time = 0.
-
 		tot_reward = 0
 		while not done:
-			choosing_time -= time.time()
 			if(lookahead):
 				action = self.lookahead_policy(self.q_net,state)
 			else: action = e_greedy(state)
-			choosing_time += time.time()
 
 			old_state = state
 			state, reward, done, _ = self.env.step(action)
@@ -268,7 +253,6 @@ class DQN_Agent():
 			
 			train_on = self.replay_memory.sample_batch()
 			
-			q_eval_time -= time.time()
 			states = [s for (_,_,_,s,_) in train_on]
 			values = self.q_value_estimator.batch_predict_values(np.array(states))
 			q_pairs = []
@@ -277,11 +261,7 @@ class DQN_Agent():
 				reward = r if d else r + self.gamma * values[i]
 				q_pairs.append((s1,a,reward))
 			
-			q_eval_time += time.time()
-
-			fitting_time -= time.time()
 			self.q_net.fit(q_pairs)
-			fitting_time += time.time()
 
 
 			#self.env.render()
@@ -367,14 +347,14 @@ def main(args):
 	episodes = 10000
 	save_freq = 150
 	# You want to create an instance of the DQN_Agent class here, and then train / test it.
-	dqn = DQN_Agent('CartPole-v0',q_flag=2)
+	dqn = DQN_Agent('CartPole-v0',q_flag=1)
 	#dqn = DQN_Agent('MountainCar-v0')
-	dqn.q_b('models-double-slow-rms','saved_model',66)
+	dqn.q_b('models-single-adam','saved_model',66)
 	'''rewards = []
 	for i in range(episodes):
 		print(i)
 		rewards.append(dqn.train())
-		print("running average " + str(np.mean(rewards) if len(rewards) < 51 else np.mean(rewards[-50:])))
+		print("running average " + str(np.mean(rewards) if len(rewards) < 51 else rewards[-50:]))
 		if (i + 1) % save_freq == 0:
 			dqn.q_net.save_model()
 			print("saved model after " + str(i) + " episodes.")
