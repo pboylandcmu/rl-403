@@ -22,7 +22,7 @@ class QNetwork():
 		if(environment_name == 'CartPole-v0'):
 			self.num_actions = 2
 			self.state_size = 4
-			self.learning_rate = 0.0001
+			self.learning_rate = 0.00001
 		elif(environment_name == 'MountainCar-v0'):
 			self.num_actions = 3
 			self.state_size = 2
@@ -66,8 +66,10 @@ class QNetwork():
 		out = self.predict(state,self.model)
 		return np.amax(out)
 
-	def predict(self,state,model):
+	def predict(self,state,model=None):
         #put state in a list
+        if model is None:
+        	model = self.model
 		s = []
 		s.append(state)
 		return model.predict(np.array(s))[0]
@@ -249,8 +251,14 @@ class DQN_Agent():
 					temp = self.q_net
 					self.q_net = self.q_value_estimator
 					self.q_value_estimator = temp
-
-			action = self.q_net.epsilon_greedy_action(state,self.epsilon)
+				if(epsilon >= np.random.uniform()):
+					action = np.random.randint(0,self.q_net.num_actions)
+				else:
+					q1s = self.q_net.predict(state,self.q_net.model)
+					q2s = self.q_value_estimator.predict(state,self.q_value_estimator.model)
+					action = np.argmax([q1+q2 for (q1,q2) in zip(q1s,q2s)])
+			else:
+				action = self.q_net.epsilon_greedy_action(state,self.epsilon)
 
 			old_state = state
 			state, reward, done, _ = self.env.step(action)
@@ -263,9 +271,9 @@ class DQN_Agent():
 			
 			states = [s for (_,_,_,s,_) in train_on]
 
-			if self.qflag == 0:
+			if self.q_flag == 0:
 				values = self.q_net.batch_predict_values(np.array(states))
-			if self.qflag == 1:
+			if self.q_flag == 1:
 				values = self.q_value_estimator.batch_predict_values(np.array(states))
 			else:
 				actions = self.q_net.batch_predict_actions(np.array(states))
@@ -371,8 +379,8 @@ def train_double_dqn(dqn,episodes= 10000,save_freq = 150):
 		rewards.append(reward)
 		print("running average " + str(np.mean(rewards) if len(rewards) < 51 else np.mean(rewards[-50:])))
 		if (i + 1) % save_freq == 0:
-			dqn.q_net.save_model("double_model"+os.sep+"m1.h5")
-			dqn.q_value_estimator.save_model("double_model"+os.sep+"m2.h5")
+			dqn.q_net.save_model("both-models"+os.sep+"m1.h5")
+			dqn.q_value_estimator.save_model("both-models"+os.sep+"m2.h5")
 			print("saved models after " + str(i) + " episodes.")
 	print("training done")
 
@@ -394,7 +402,8 @@ def main(args):
 	episodes = 10000
 	save_freq = 150
 	# You want to create an instance of the DQN_Agent class here, and then train / test it.
-	dqn = DQN_Agent('CartPole-v0',q_flag=1)
+	dqn = DQN_Agent('CartPole-v0',q_flag=2)
+	train_double_dqn(dqn)
 	#dqn = DQN_Agent('MountainCar-v0',q_flag=0)
 	#dqn.q_b('models','saved_model',66)
 
