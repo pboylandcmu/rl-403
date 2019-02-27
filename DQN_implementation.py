@@ -22,7 +22,7 @@ class QNetwork():
 		if(environment_name == 'CartPole-v0'):
 			self.num_actions = 2
 			self.state_size = 4
-			self.learning_rate = 0.001
+			self.learning_rate = 0.00001
 		elif(environment_name == 'MountainCar-v0'):
 			self.num_actions = 3
 			self.state_size = 2
@@ -39,7 +39,7 @@ class QNetwork():
 		elif(qflag == 1):
 			self.file_name = "models/save_model"
 		else:
-			self.file_name = "double_models/save_models"
+			self.file_name = "double-models-decimate/save_models"
 		self.model_names = []
 
 	def define_model(self,environment_name):
@@ -71,6 +71,8 @@ class QNetwork():
 
 	def predict(self,state,model):
         #put state in a list
+		if model is None:
+			model = self.model
 		s = []
 		s.append(state)
 		return model.predict(np.array(s))[0]
@@ -262,8 +264,14 @@ class DQN_Agent():
 					temp = self.q_net
 					self.q_net = self.q_value_estimator
 					self.q_value_estimator = temp
-
-			action = self.q_net.epsilon_greedy_action(state,self.epsilon)
+				if(epsilon >= np.random.uniform()):
+					action = np.random.randint(0,self.q_net.num_actions)
+				else:
+					q1s = self.q_net.predict(state,self.q_net.model)
+					q2s = self.q_value_estimator.predict(state,self.q_value_estimator.model)
+					action = np.argmax([q1+q2 for (q1,q2) in zip(q1s,q2s)])
+			else:
+				action = self.q_net.epsilon_greedy_action(state,self.epsilon)
 
 			old_state = state
 			state, reward, done, _ = self.env.step(action)
@@ -398,8 +406,8 @@ def train_double_dqn(dqn,episodes= 10000,save_freq = 150):
 		rewards.append(reward)
 		print("running average " + str(np.mean(rewards) if len(rewards) < 51 else np.mean(rewards[-50:])))
 		if (i + 1) % save_freq == 0:
-			dqn.q_net.save_model("double_model"+os.sep+"m1.h5")
-			dqn.q_value_estimator.save_model("double_model"+os.sep+"m2.h5")
+			dqn.q_net.save_model("both-models"+os.sep+"m1.h5")
+			dqn.q_value_estimator.save_model("both-models"+os.sep+"m2.h5")
 			print("saved models after " + str(i) + " episodes.")
 	print("training done")
 
