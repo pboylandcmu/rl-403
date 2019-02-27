@@ -287,7 +287,7 @@ class DQN_Agent():
 
 			q_pairs = []
 			for i in range(len(train_on)):
-				(s1,a,r,s2,d) = train_on[i]
+				(s1,a,r,_,d) = train_on[i]
 				reward = r if d else r + self.gamma * values[i]
 				q_pairs.append((s1,a,reward))
 			
@@ -350,7 +350,7 @@ class DQN_Agent():
 			exit(0)
 		for i in range(1,model_count+1):
 			file_name = dir + os.sep + file_base + str(i) + '.h5'
-			if(self.qflag == 2):
+			if(self.q_flag == 2):
 				file_name_2 = dir + os.sep + file_base_2 + str(i) + '.h5'
 			else:
 				file_name_2 = None
@@ -418,12 +418,10 @@ def main(args):
 	# Setting this as the default tensorflow session.
 	keras.backend.tensorflow_backend.set_session(sess)
 
-	episodes = 10000
-	save_freq = 150
 	# You want to create an instance of the DQN_Agent class here, and then train / test it.
 	dqn = DQN_Agent('CartPole-v0',q_flag=1)
 	#dqn = DQN_Agent('MountainCar-v0',q_flag=0)
-	#dqn.q_b('models','saved_model',66)
+	#dqn.q_b('models','saved_model',66) #Run code for question B using 
 
 
 	
