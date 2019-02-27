@@ -224,7 +224,7 @@ class DQN_Agent():
 		return lambda state : randint(0,self.q_net.num_actions)
 
 	def update_slow_network(self):
-		if(self.q_net is self.q_value_estimator):
+		if(self.qflag != 1):
 			return
 		#self.q_net.save_model('fast_DQN.h5')
 		self.q_value_estimator.model.set_weights(self.q_net.model.get_weights())
@@ -300,7 +300,8 @@ class DQN_Agent():
 			while not done:
 				if(lookahead):
 					action = self.lookahead_policy(self.q_net,state)
-				else: action = q_net.epsilon_greedy_action(state,0)
+				else: 
+					action = self.q_net.epsilon_greedy_action(state,0)
 				state, reward, done, _ = self.env.step(action)
 				total_reward += reward
 			total_rewards.append(total_reward)
