@@ -34,9 +34,9 @@ class QNetwork():
 		self.model = self.define_model(environment_name)
 
 		self.file_count = 0
-		if(qflag == 1):
+		if(qflag == 0):
 			self.file_name = "atari_models/saved_model"
-		elif(qflag == 0):
+		elif(qflag == 1):
 			self.file_name = "models/save_model"
 		else:
 			self.file_name = "double_models/save_models"
@@ -180,9 +180,9 @@ class DQN_Agent():
 		# Here is also a good place to set environmental parameters,
 		# as well as training parameters - number of episodes / iterations, etc.
 		self.env = gym.make(environment_name)
-		self.qflag = q_flag
+		self.q_flag = q_flag
 		self.q_net = QNetwork(environment_name,qflag = q_flag)
-		if(q_flag == 1):
+		if(q_flag == 0):
 			self.q_value_estimator = self.q_net
 		else:
 			self.q_value_estimator = QNetwork(environment_name)
@@ -224,7 +224,7 @@ class DQN_Agent():
 		return lambda state : randint(0,self.q_net.num_actions)
 
 	def update_slow_network(self):
-		if(self.qflag != 1):
+		if(self.q_flag != 1):
 			return
 		#self.q_net.save_model('fast_DQN.h5')
 		self.q_value_estimator.model.set_weights(self.q_net.model.get_weights())
@@ -244,6 +244,11 @@ class DQN_Agent():
 
 		tot_reward = 0
 		while not done:
+			if self.q_flag == 2:
+				if randint(0,2) == 0:
+					temp = self.q_net
+					self.q_net = self.q_value_estimator
+					self.q_value_estimator = temp
 
 			action = self.q_net.epsilon_greedy_action(state,self.epsilon)
 
