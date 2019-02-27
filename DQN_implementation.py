@@ -66,6 +66,9 @@ class QNetwork():
 		out = self.predict(state,self.model)
 		return np.amax(out)
 
+	def q_values(self,state):
+		return self.predict(state,self.model)
+
 	def predict(self,state,model):
         #put state in a list
 		s = []
@@ -205,6 +208,7 @@ class DQN_Agent():
 	def lookahead_policy(self,q_values,state):
 		best_action = 0
 		best_value = float('-inf')
+		state = self.env.state
 		for a in range(0,2):
 			s,reward,done = self.env.step(a)
 			if(done):
@@ -214,10 +218,19 @@ class DQN_Agent():
 				continue
 			for b in range(0,2):
 				s2 ,reward,done = self.env.step(b)
-				value = self.q_net.q_value(s2)
+				if(self.q_flag == 2):
+					value1 = self.q_net.q_values(s2)
+					value2 = self.q_value_estimator.q_values(s2)
+					total = np.add(value1,value2)
+					value = np.amax(total)
+				else:
+					value = self.q_net.q_value(s2)
 				if(value > best_value):
 					best_value = value
 					best_action = a
+				self.env.state = s
+			self.env.state = state
+		self.env.state = state
 		return best_action
 
 	def random_policy(self):
@@ -263,9 +276,9 @@ class DQN_Agent():
 			
 			states = [s for (_,_,_,s,_) in train_on]
 
-			if self.qflag == 0:
+			if self.q_flag == 0:
 				values = self.q_net.batch_predict_values(np.array(states))
-			if self.qflag == 1:
+			if self.q_flag == 1:
 				values = self.q_value_estimator.batch_predict_values(np.array(states))
 			else:
 				actions = self.q_net.batch_predict_actions(np.array(states))
@@ -288,10 +301,12 @@ class DQN_Agent():
 		self.epsilon -= self.epsilon_decay
 		return tot_reward
 
-	def test(self,episodes,lookahead = False,model_file=None):
+	def test(self,episodes,model_file,model_file_2=None,lookahead = False):
 		# Evaluate the performance of your agent over 100 episodes, by calculating cummulative rewards for the 100 episodes.
 		# Here you need to interact with the environment, irrespective of whether you are using a memory.
 		self.q_net.load_model(model_file)
+		if(model_file_2 is not None):
+			self.q_value_estimator.load_model(model_file_2)
 		total_rewards = []
 		for _ in range(episodes):
 			state = self.env.reset()
@@ -300,8 +315,13 @@ class DQN_Agent():
 			while not done:
 				if(lookahead):
 					action = self.lookahead_policy(self.q_net,state)
-				else: 
+				elif(self.q_flag == 1 or self.q_flag == 0): 
 					action = self.q_net.epsilon_greedy_action(state,0)
+				elif(self.q_flag == 2):
+					value1 = self.q_net.model.q_values()
+					value2 = self.q_value_estimator.q_values()
+					total_value = np.add(value1,value2)
+					action = np.argmax(total_value)
 				state, reward, done, _ = self.env.step(action)
 				total_reward += reward
 			total_rewards.append(total_reward)
@@ -321,13 +341,20 @@ class DQN_Agent():
 
 		# Initialize your replay memory with a burn_in number of episodes / transitions.
 	
-	def q_b(self,dir,file_base,model_count):
+	def q_b(self,dir,file_base,model_count,file_base_2 = None):
 		y = []
 		x = []
 		count = 150
+		if(file_base_2 is None and self.q_flag == 2):
+			print("q_b not called correctly")
+			exit(0)
 		for i in range(1,model_count+1):
 			file_name = dir + os.sep + file_base + str(i) + '.h5'
-			rewards = self.test(20,file_name)
+			if(self.qflag == 2):
+				file_name_2 = dir + os.sep + file_base_2 + str(i) + '.h5'
+			else:
+				file_name_2 = None
+			rewards = self.test(20,file_name,model_file_2= file_name_2)
 			print(str(150*i) + " episodes : mean = " + str(np.mean(rewards)))
 			y.append(np.mean(rewards))
 			x.append(count)
