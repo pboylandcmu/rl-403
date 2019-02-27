@@ -45,9 +45,9 @@ class QNetwork():
 			model.add(Dense(80, activation='relu'))
 			model.add(Dense(2, activation='linear'))
 		elif(environment_name == 'MountainCar-v0'):
-			model.add(Dense(40, input_dim=2, activation='relu'))
-			model.add(Dense(40, activation='relu'))
-			model.add(Dense(40, activation='relu'))
+			model.add(Dense(80, input_dim=2, activation='relu'))
+			model.add(Dense(80, activation='relu'))
+			model.add(Dense(80, activation='relu'))
 			model.add(Dense(3, activation='linear'))
 		model.compile(optimizer=keras.optimizers.Adam(lr=self.learning_rate),
               loss='MSE')
@@ -185,8 +185,10 @@ class DQN_Agent():
 
 		if(environment_name == 'CartPole-v0'):
 			self.gamma = 0.99
+			self.epsilon_decay = 0.000045
 		elif(environment_name == 'MountainCar-v0'):
 			self.gamma = 1
+			self.epsilon_decay = 0.000045
 		self.pass_freq = 150
 
 		self.burn_in_memory()
@@ -224,10 +226,13 @@ class DQN_Agent():
 	def update_slow_network(self):
 		if(self.q_net is self.q_value_estimator):
 			return
-		self.q_net.save_model('fast_DQN2.h5')
-		self.q_value_estimator.load_model('fast_DQN2.h5')
+		#self.q_net.save_model('fast_DQN.h5')
+		self.q_value_estimator.model.set_weights(self.q_net.model.get_weights())
+		'''K.clear_session()
+		self.q_net.load_model('fast_DQN.h5')
+		self.q_value_estimator.load_model('fast_DQN.h5')'''
 
-	def train(self,lookahead=False):
+	def train(self):
 		# In this function, we will train our network.
 		# If training without experience replay_memory, then you will interact with the environment
 		# in this function, while also updating your network parameters.
@@ -240,9 +245,7 @@ class DQN_Agent():
 
 		tot_reward = 0
 		while not done:
-			if(lookahead):
-				action = self.lookahead_policy(self.q_net,state)
-			else: action = e_greedy(state)
+			action = e_greedy(state)
 
 			old_state = state
 			state, reward, done, _ = self.env.step(action)
@@ -262,8 +265,6 @@ class DQN_Agent():
 				q_pairs.append((s1,a,reward))
 			
 			self.q_net.fit(q_pairs)
-
-
 			#self.env.render()
 
 		#print("choosing time is " + str(choosing_time))
@@ -271,21 +272,22 @@ class DQN_Agent():
 		#print("fitting time is " + str(fitting_time))
 			
 		self.epsilon -= self.epsilon_decay
-
 		return tot_reward
 
-	def test(self,episodes,model_file=None):
+	def test(self,episodes,lookahead = False,model_file=None):
 		# Evaluate the performance of your agent over 100 episodes, by calculating cummulative rewards for the 100 episodes.
 		# Here you need to interact with the environment, irrespective of whether you are using a memory.
 		self.q_net.load_model(model_file)
-		get_action = self.epsilon_greedy_policy(self.q_net,.05)
+		get_action = self.epsilon_greedy_policy(self.q_net,0)
 		total_rewards = []
 		for _ in range(episodes):
 			state = self.env.reset()
 			done = False
 			total_reward = 0
 			while not done:
-				action = get_action(state)
+				if(lookahead):
+					action = self.lookahead_policy(self.q_net,state)
+				else: action = get_action(state)
 				state, reward, done, _ = self.env.step(action)
 				total_reward += reward
 			total_rewards.append(total_reward)
@@ -347,20 +349,22 @@ def main(args):
 	episodes = 10000
 	save_freq = 150
 	# You want to create an instance of the DQN_Agent class here, and then train / test it.
-	dqn = DQN_Agent('CartPole-v0',q_flag=1)
-	#dqn = DQN_Agent('MountainCar-v0')
-	dqn.q_b('models-single-adam','saved_model',66)
-	'''rewards = []
+	#dqn = DQN_Agent('CartPole-v0',q_flag=2)
+	dqn = DQN_Agent('MountainCar-v0',q_flag=0)
+	#dqn.q_b('models','saved_model',66)
+	rewards = []
 	for i in range(episodes):
 		print(i)
-		rewards.append(dqn.train())
-		print("running average " + str(np.mean(rewards) if len(rewards) < 51 else rewards[-50:]))
+		reward = dqn.train()
+		print("score = ",reward)
+		rewards.append(reward)
+		print("running average " + str(np.mean(rewards) if len(rewards) < 51 else np.mean(rewards[-50:])))
 		if (i + 1) % save_freq == 0:
 			dqn.q_net.save_model()
 			print("saved model after " + str(i) + " episodes.")
 		if (i + 1) % dqn.pass_freq == 0:
 			dqn.update_slow_network()
-	print("training done")'''
+	print("training done")
 
 	
 if __name__ == '__main__':
