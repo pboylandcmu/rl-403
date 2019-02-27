@@ -74,8 +74,11 @@ class QNetwork():
 
 	def batch_predict_values(self,states):
 		predictions = self.model.predict(states)
-
 		return [np.amax(prediction) for prediction in predictions]
+
+	def batch_predict_actions(self,states):
+		predictions = self.model.predict(states)
+		return [np.argmax(prediction) for prediction in predictions]
 
 	def epsilon_greedy_action(self,state,epsilon,model=None):
 		if(epsilon >= np.random.uniform()):
