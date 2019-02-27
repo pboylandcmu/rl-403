@@ -199,15 +199,6 @@ class DQN_Agent():
 
 		self.burn_in_memory()
 
-	def epsilon_greedy_policy(self, q_net,epsilon = None):
-		if(epsilon is None):
-			epsilon = self.epsilon
-		return lambda state : q_net.epsilon_greedy_action(state,epsilon)
-
-	def greedy_policy(self, q_net):
-		return lambda state : q_net.greedy_action(state)
-		# Creating greedy policy for test time.		
-
 	def lookahead_policy(self,q_values,state):
 		best_action = 0
 		best_value = float('-inf')
