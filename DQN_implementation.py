@@ -69,9 +69,9 @@ class QNetwork():
 	def q_values(self,state):
 		return self.predict(state,self.model)
 
-	def predict(self,state,model):
+	def predict(self,state,model=None):
         #put state in a list
-		if model is None:
+		if (model is None):
 			model = self.model
 		s = []
 		s.append(state)
@@ -264,7 +264,7 @@ class DQN_Agent():
 					temp = self.q_net
 					self.q_net = self.q_value_estimator
 					self.q_value_estimator = temp
-				if(epsilon >= np.random.uniform()):
+				if(0.5 >= np.random.uniform()):
 					action = np.random.randint(0,self.q_net.num_actions)
 				else:
 					q1s = self.q_net.predict(state,self.q_net.model)
