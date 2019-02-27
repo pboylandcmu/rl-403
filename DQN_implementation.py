@@ -241,6 +241,7 @@ class DQN_Agent():
 
 		tot_reward = 0
 		while not done:
+
 			action = self.q_net.epsilon_greedy_action(state,self.epsilon)
 
 			old_state = state
@@ -253,7 +254,16 @@ class DQN_Agent():
 			train_on = self.replay_memory.sample_batch()
 			
 			states = [s for (_,_,_,s,_) in train_on]
-			values = self.q_value_estimator.batch_predict_values(np.array(states))
+
+			if self.q_flag == 0:
+				values = self.q_net.batch_predict_values(np.array(states))
+			if self.q_flag == 1:
+				values = self.q_value_estimator.batch_predict_values(np.array(states))
+			else:
+				actions = self.q_net.batch_predict_actions(np.array(states))
+				pred_qs = self.q_value_estimator.model.predict(np.array(states))
+				values = [qs[a] for (qs,a) in zip(pred_qs,actions)]
+
 			q_pairs = []
 			for i in range(len(train_on)):
 				(s1,a,r,s2,d) = train_on[i]
