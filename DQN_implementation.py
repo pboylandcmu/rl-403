@@ -22,7 +22,7 @@ class QNetwork():
 		if(environment_name == 'CartPole-v0'):
 			self.num_actions = 2
 			self.state_size = 4
-			self.learning_rate = 0.001
+			self.learning_rate = 0.0001
 		elif(environment_name == 'MountainCar-v0'):
 			self.num_actions = 3
 			self.state_size = 2
@@ -39,7 +39,7 @@ class QNetwork():
 		elif(qflag == 1):
 			self.file_name = "models/save_model"
 		else:
-			self.file_name = "double_models/save_models"
+			self.file_name = "double-models-decimate/save_models"
 		self.model_names = []
 
 	def define_model(self,environment_name):
