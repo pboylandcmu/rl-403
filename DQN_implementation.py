@@ -34,10 +34,7 @@ class QNetwork():
 		self.model = self.define_model(environment_name)
 
 		self.file_count = 0
-		if(qflag == 1):
-			self.file_name = "models/saved_model"
-		else: 
-			self.file_name = "models-double/saved_model"
+		self.file_name = "models-double-slow-rms/saved_model"
 		self.model_names = []
 
 	def define_model(self,environment_name):
@@ -201,7 +198,7 @@ class DQN_Agent():
 		elif(environment_name == 'MountainCar-v0'):
 			self.gamma = 1
 			self.epsilon_decay = 0.000045
-		self.pass_freq = 50
+		self.pass_freq = 150
 
 		self.burn_in_memory()
 

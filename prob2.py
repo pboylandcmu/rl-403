@@ -29,8 +29,11 @@ def sampleQ1():
 	values = [applyf(x)*compQ1ratio(x) for x in points]
 	ratios = [compQ1ratio(x) for x in points]
 	print("importance sampling")
-	print(np.mean(values))
-	print(np.var(values))
+	ismean = np.mean(values)
+	print("mean is: " + str(ismean))
+	print("variance is " + str(np.var(values))) 
+	print("variance is " + str(np.mean([(compQ1ratio(x)*applyf(x)-ismean) ** 2 for x in points])))
+	print("variance is " + str(np.mean([applyf(x)*applyf(x)*compQ1ratio(x)*compQ1ratio(x) - 2*ismean*applyf(x)*compQ1ratio(x) + ismean*ismean for x in points])))
 	print("weighted importance sampling")
 	Z = np.mean(ratios)
 	print(np.mean(values)/Z)
