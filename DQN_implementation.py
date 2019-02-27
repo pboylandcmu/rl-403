@@ -263,9 +263,9 @@ class DQN_Agent():
 			
 			states = [s for (_,_,_,s,_) in train_on]
 
-			if self.q_flag == 0:
+			if self.qflag == 0:
 				values = self.q_net.batch_predict_values(np.array(states))
-			if self.q_flag == 1:
+			if self.qflag == 1:
 				values = self.q_value_estimator.batch_predict_values(np.array(states))
 			else:
 				actions = self.q_net.batch_predict_actions(np.array(states))
@@ -347,6 +347,37 @@ def parse_arguments():
 	parser.add_argument('--model',dest='model_file',type=str)
 	return parser.parse_args()
 
+def train_single_dqn(dqn,episodes = 10000,save_freq = 150):
+	rewards = []
+	for i in range(episodes):
+		print(i)
+		reward = dqn.train()
+		print("score = ",reward)
+		rewards.append(reward)
+		print("running average " + str(np.mean(rewards) if len(rewards) < 51 else np.mean(rewards[-50:])))
+		if (i + 1) % save_freq == 0:
+			dqn.q_net.save_model()
+			print("saved model after " + str(i) + " episodes.")
+		if (i + 1) % dqn.pass_freq == 0:
+			dqn.update_slow_network()
+	print("training done")
+
+def train_double_dqn(dqn,episodes= 10000,save_freq = 150):
+	rewards = []
+	for i in range(episodes):
+		print(i)
+		reward = dqn.train()
+		print("score = ",reward)
+		rewards.append(reward)
+		print("running average " + str(np.mean(rewards) if len(rewards) < 51 else np.mean(rewards[-50:])))
+		if (i + 1) % save_freq == 0:
+			dqn.q_net.save_model("double_model"+os.sep+"m1.h5")
+			dqn.q_value_estimator.save_model("double_model"+os.sep+"m2.h5")
+			print("saved models after " + str(i) + " episodes.")
+	print("training done")
+
+
+
 def main(args):
 
 	args = parse_arguments()
@@ -363,22 +394,10 @@ def main(args):
 	episodes = 10000
 	save_freq = 150
 	# You want to create an instance of the DQN_Agent class here, and then train / test it.
-	dqn = DQN_Agent('CartPole-v0',q_flag=2)
+	dqn = DQN_Agent('CartPole-v0',q_flag=1)
 	#dqn = DQN_Agent('MountainCar-v0',q_flag=0)
 	#dqn.q_b('models','saved_model',66)
-	rewards = []
-	for i in range(episodes):
-		print(i)
-		reward = dqn.train()
-		print("score = ",reward)
-		rewards.append(reward)
-		print("running average " + str(np.mean(rewards) if len(rewards) < 51 else np.mean(rewards[-50:])))
-		if (i + 1) % save_freq == 0:
-			dqn.q_net.save_model()
-			print("saved model after " + str(i) + " episodes.")
-		if (i + 1) % dqn.pass_freq == 0:
-			dqn.update_slow_network()
-	print("training done")
+
 
 	
 if __name__ == '__main__':
