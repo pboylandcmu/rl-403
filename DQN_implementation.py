@@ -99,7 +99,7 @@ class QNetwork():
 			name = format(model_file + str(self.file_count) + ".h5")
 			self.model_names.append(name)
 		else:
-			name = model_file
+			name = model_file + str(self.file_count) + ".h5"
 		self.model.save(name)
 		return name
 
@@ -406,8 +406,8 @@ def train_double_dqn(dqn,episodes= 10000,save_freq = 150):
 		rewards.append(reward)
 		print("running average " + str(np.mean(rewards) if len(rewards) < 51 else np.mean(rewards[-50:])))
 		if (i + 1) % save_freq == 0:
-			dqn.q_net.save_model("both-models"+os.sep+"m1.h5")
-			dqn.q_value_estimator.save_model("both-models"+os.sep+"m2.h5")
+			dqn.q_net.save_model("both-models"+os.sep+"m1")
+			dqn.q_value_estimator.save_model("both-models"+os.sep+"m2")
 			print("saved models after " + str(i) + " episodes.")
 	print("training done")
 
