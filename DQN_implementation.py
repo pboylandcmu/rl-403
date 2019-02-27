@@ -34,7 +34,12 @@ class QNetwork():
 		self.model = self.define_model(environment_name)
 
 		self.file_count = 0
-		self.file_name = "models-single-adam/saved_model"
+		if(qflag == 1):
+			self.file_name = "atari_models/saved_model"
+		elif(qflag == 0):
+			self.file_name = "models/save_model"
+		else:
+			self.file_name = "double_models/save_models"
 		self.model_names = []
 
 	def define_model(self,environment_name):
@@ -166,12 +171,13 @@ class DQN_Agent():
 	# (4) Create a function to test the Q Network's performance on the environment.
 	# (5) Create a function for Experience Replay.
 
-	def __init__(self, environment_name, render=False,q_flag=1,eps=0.5,eps_decay=0.000025):
+	def __init__(self, environment_name, render=False,q_flag=0,eps=0.5,eps_decay=0.000025):
 
 		# Create an instance of the network itself, as well as the memory.
 		# Here is also a good place to set environmental parameters,
 		# as well as training parameters - number of episodes / iterations, etc.
 		self.env = gym.make(environment_name)
+		self.qflag = q_flag
 		self.q_net = QNetwork(environment_name,qflag = q_flag)
 		if(q_flag == 1):
 			self.q_value_estimator = self.q_net
