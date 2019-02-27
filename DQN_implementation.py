@@ -411,8 +411,6 @@ def train_double_dqn(dqn,episodes= 10000,save_freq = 150):
 			print("saved models after " + str(i) + " episodes.")
 	print("training done")
 
-
-
 def main(args):
 
 	args = parse_arguments()
@@ -427,10 +425,11 @@ def main(args):
 	keras.backend.tensorflow_backend.set_session(sess)
 
 	# You want to create an instance of the DQN_Agent class here, and then train / test it.
-	dqn = DQN_Agent('CartPole-v0',q_flag=2)
-	train_double_dqn(dqn)
-	#dqn = DQN_Agent('MountainCar-v0',q_flag=0)
-	#dqn.q_b('models','saved_model',66) #Run code for question B using 
+	#dqn = DQN_Agent('CartPole-v0',q_flag=1)
+	dqn = DQN_Agent('MountainCar-v0',q_flag=1)
+	dqn.q_b('models','saved_model',66) #Run code for question B single DQN 
+	#dqn.q_b('double_models','m1',66,file_base_2='m2') # Run code for question B double DQN
+
 
 
 	
