@@ -203,9 +203,8 @@ class DQN_Agent():
 			self.epsilon_decay = 0.000045
 		elif(environment_name == 'MountainCar-v0'):
 			self.gamma = 1
-			self.epsilon_decay = 0.000035
+			self.epsilon_decay = 0.000045
 		self.pass_freq = 150
-
 		self.burn_in_memory()
 
 	def lookahead_policy(self,q_values,state):
@@ -244,9 +243,6 @@ class DQN_Agent():
 			return
 		#self.q_net.save_model('fast_DQN.h5')
 		self.q_value_estimator.model.set_weights(self.q_net.model.get_weights())
-		'''K.clear_session()
-		self.q_net.load_model('fast_DQN.h5')
-		self.q_value_estimator.load_model('fast_DQN.h5')'''
 
 	def train(self):
 		# In this function, we will train our network.
@@ -337,7 +333,7 @@ class DQN_Agent():
 			total_rewards.append(total_reward)
 		return total_rewards
 
-	def burn_in_memory(self,burn_in=10000):
+	def burn_in_memory(self,burn_in=15000):
 		done = False
 		pol = self.random_policy()
 		state = self.env.reset()
