@@ -26,7 +26,7 @@ class QNetwork():
 		elif(environment_name == 'MountainCar-v0'):
 			self.num_actions = 3
 			self.state_size = 2
-			self.learning_rate = 0.0001
+			self.learning_rate = 0.00001
 		else:
 			print("Invalid environment name\nTry 'CartPole-v0' or 'MountainCar-v0")
 			exit(0)
@@ -91,12 +91,13 @@ class QNetwork():
 	def save_model(self,model_file=None):
 		if(model_file is None):
 			model_file = self.file_name
-			self.file_count += 1
 			name = format(model_file + str(self.file_count) + ".h5")
 			self.model_names.append(name)
 		else:
 			self.file_count += 1
 			name = model_file + str(self.file_count) + ".h5"
+			
+		self.file_count += 1
 		self.model.save(name)
 		return name
 
@@ -199,7 +200,7 @@ class DQN_Agent():
 			self.epsilon_decay = 0.000045
 		elif(environment_name == 'MountainCar-v0'):
 			self.gamma = 1
-			self.epsilon_decay = 0.000045
+			self.epsilon_decay = 0.000035
 		self.pass_freq = 150
 
 		self.burn_in_memory()
@@ -318,6 +319,7 @@ class DQN_Agent():
 			done = False
 			total_reward = 0
 			while not done:
+				#self.env.render()
 				if(lookahead):
 					action = self.lookahead_policy(self.q_net,state)
 				elif(self.q_flag == 1 or self.q_flag == 0): 
@@ -368,7 +370,10 @@ class DQN_Agent():
 		plt.plot(x,y)
 		plt.xlabel("episodes")
 		plt.ylabel("average reward")
-		plt.title(self.environment_name + " Performance plot")
+		if self.q_flag == 2:
+			plt.title(self.environment_name + " Double DQN Performance plot")
+		else:
+			plt.title(self.environment_name + " DQN Performance plot")
 		plt.show()
 
 
@@ -378,6 +383,7 @@ def parse_arguments():
 	parser.add_argument('--render',dest='render',type=int,default=0)
 	parser.add_argument('--train',dest='train',type=int,default=1)
 	parser.add_argument('--model',dest='model_file',type=str)
+	parser.add_argument('--q',dest='qflag',type=int,default=1)
 	return parser.parse_args()
 
 def train_single_dqn(dqn,episodes = 10000,save_freq = 150):
@@ -404,14 +410,15 @@ def train_double_dqn(dqn,episodes= 10000,save_freq = 150):
 		rewards.append(reward)
 		print("running average " + str(np.mean(rewards) if len(rewards) < 51 else np.mean(rewards[-50:])))
 		if (i + 1) % save_freq == 0:
-			dqn.q_net.save_model("v2l70d35"+os.sep+"m1")
-			dqn.q_value_estimator.save_model("v2l70d35"+os.sep+"m2")
+			dqn.q_net.save_model(model_file="models-double"+os.sep+"m1")
+			dqn.q_value_estimator.save_model(model_file="models-double"+os.sep+"m2")
 			print("saved models after " + str(i) + " episodes.")
 	print("training done")
 
 def main(args):
 
 	args = parse_arguments()
+	qflag = args.qflag
 	environment_name = args.env
 
 	# Setting the session to allow growth, so it doesn't allocate all GPU memory.
@@ -423,15 +430,14 @@ def main(args):
 	keras.backend.tensorflow_backend.set_session(sess)
 
 	# You want to create an instance of the DQN_Agent class here, and then train / test it.
-	dqn = DQN_Agent('CartPole-v0',q_flag=2)
-	#dqn = DQN_Agent('MountainCar-v0',q_flag=1)
-	#train_double_dqn(dqn,save_freq=100)
-	#dqn.q_b('v2l70d35','saved_model',66) #Run code for question B single DQN 
-	dqn.q_b('v2ld35','m1',99,file_base_2='m2') # Run code for question B double DQN
-	#dqn.test(5,"v1ld/saved_model53.h5")
-
-
-	
+	#dqn = DQN_Agent('CartPole-v0',q_flag=1)
+	dqn = DQN_Agent('MountainCar-v0',q_flag=qflag)
+	if(qflag == 1 or qflag == 0):
+		train_single_dqn(dqn)
+		dqn.q_b('models','saved_model',66) #Run code for question B single DQN 
+	else:
+		train_double_dqn(dqn)
+		dqn.q_b('models-double','m1',66,file_base_2='m2') # Run code for question B double DQN
+		
 if __name__ == '__main__':
 	main(sys.argv)
-
