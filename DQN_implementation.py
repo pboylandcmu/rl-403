@@ -22,11 +22,11 @@ class QNetwork():
 		if(environment_name == 'CartPole-v0'):
 			self.num_actions = 2
 			self.state_size = 4
-			self.learning_rate = 0.00001
+			self.learning_rate = 0.000007
 		elif(environment_name == 'MountainCar-v0'):
 			self.num_actions = 3
 			self.state_size = 2
-			self.learning_rate = 0.00001
+			self.learning_rate = 0.0001
 		else:
 			print("Invalid environment name\nTry 'CartPole-v0' or 'MountainCar-v0")
 			exit(0)
@@ -34,13 +34,9 @@ class QNetwork():
 		self.model = self.define_model(environment_name)
 
 		self.file_count = 0
-		if(qflag == 0):
-			self.file_name = "atari_models/saved_model"
-		elif(qflag == 1):
-			self.file_name = "models/save_model"
-		else:
-			self.file_name = "double-models-decimate/save_models"
 		self.model_names = []
+
+		self.file_name = "v2l70d35/saved_model"
 
 	def define_model(self,environment_name):
 		model = Sequential()
@@ -98,6 +94,7 @@ class QNetwork():
 			name = format(model_file + str(self.file_count) + ".h5")
 			self.model_names.append(name)
 		else:
+			self.file_count += 1
 			name = model_file + str(self.file_count) + ".h5"
 			
 		self.file_count += 1
@@ -180,7 +177,7 @@ class DQN_Agent():
 	# (4) Create a function to test the Q Network's performance on the environment.
 	# (5) Create a function for Experience Replay.
 
-	def __init__(self, environment_name, render=False,q_flag=0,eps=0.5,eps_decay=0.000025):
+	def __init__(self, environment_name, render=False,q_flag=0,eps=0.5,eps_decay=0.000035):
 
 		# Create an instance of the network itself, as well as the memory.
 		# Here is also a good place to set environmental parameters,
@@ -324,11 +321,12 @@ class DQN_Agent():
 				elif(self.q_flag == 1 or self.q_flag == 0): 
 					action = self.q_net.epsilon_greedy_action(state,0)
 				elif(self.q_flag == 2):
-					value1 = self.q_net.model.q_values()
-					value2 = self.q_value_estimator.q_values()
+					value1 = self.q_net.q_values(state)
+					value2 = self.q_value_estimator.q_values(state)
 					total_value = np.add(value1,value2)
 					action = np.argmax(total_value)
 				state, reward, done, _ = self.env.step(action)
+				#self.env.render()
 				total_reward += reward
 			total_rewards.append(total_reward)
 		return total_rewards
@@ -436,7 +434,6 @@ def main(args):
 	else:
 		train_double_dqn(dqn)
 		dqn.q_b('models-double','m1',66,file_base_2='m2') # Run code for question B double DQN
-	
-	
+		
 if __name__ == '__main__':
 	main(sys.argv)
