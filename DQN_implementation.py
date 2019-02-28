@@ -22,7 +22,7 @@ class QNetwork():
 		if(environment_name == 'CartPole-v0'):
 			self.num_actions = 2
 			self.state_size = 4
-			self.learning_rate = 0.00001
+			self.learning_rate = 0.000007
 		elif(environment_name == 'MountainCar-v0'):
 			self.num_actions = 3
 			self.state_size = 2
@@ -34,13 +34,9 @@ class QNetwork():
 		self.model = self.define_model(environment_name)
 
 		self.file_count = 0
-		if(qflag == 0):
-			self.file_name = "atari_models/saved_model"
-		elif(qflag == 1):
-			self.file_name = "models/save_model"
-		else:
-			self.file_name = "double-models-decimate/save_models"
 		self.model_names = []
+
+		self.file_name = "v2l70d35/saved_model"
 
 	def define_model(self,environment_name):
 		model = Sequential()
@@ -99,6 +95,7 @@ class QNetwork():
 			name = format(model_file + str(self.file_count) + ".h5")
 			self.model_names.append(name)
 		else:
+			self.file_count += 1
 			name = model_file + str(self.file_count) + ".h5"
 		self.model.save(name)
 		return name
@@ -179,7 +176,7 @@ class DQN_Agent():
 	# (4) Create a function to test the Q Network's performance on the environment.
 	# (5) Create a function for Experience Replay.
 
-	def __init__(self, environment_name, render=False,q_flag=0,eps=0.5,eps_decay=0.000025):
+	def __init__(self, environment_name, render=False,q_flag=0,eps=0.5,eps_decay=0.000035):
 
 		# Create an instance of the network itself, as well as the memory.
 		# Here is also a good place to set environmental parameters,
@@ -264,7 +261,7 @@ class DQN_Agent():
 					temp = self.q_net
 					self.q_net = self.q_value_estimator
 					self.q_value_estimator = temp
-				if(0.5 >= np.random.uniform()):
+				if(self.epsilon >= np.random.uniform()):
 					action = np.random.randint(0,self.q_net.num_actions)
 				else:
 					q1s = self.q_net.predict(state,self.q_net.model)
@@ -326,11 +323,12 @@ class DQN_Agent():
 				elif(self.q_flag == 1 or self.q_flag == 0): 
 					action = self.q_net.epsilon_greedy_action(state,0)
 				elif(self.q_flag == 2):
-					value1 = self.q_net.model.q_values()
-					value2 = self.q_value_estimator.q_values()
+					value1 = self.q_net.q_values(state)
+					value2 = self.q_value_estimator.q_values(state)
 					total_value = np.add(value1,value2)
 					action = np.argmax(total_value)
 				state, reward, done, _ = self.env.step(action)
+				#self.env.render()
 				total_reward += reward
 			total_rewards.append(total_reward)
 		return total_rewards
@@ -406,8 +404,8 @@ def train_double_dqn(dqn,episodes= 10000,save_freq = 150):
 		rewards.append(reward)
 		print("running average " + str(np.mean(rewards) if len(rewards) < 51 else np.mean(rewards[-50:])))
 		if (i + 1) % save_freq == 0:
-			dqn.q_net.save_model("both-models"+os.sep+"m1")
-			dqn.q_value_estimator.save_model("both-models"+os.sep+"m2")
+			dqn.q_net.save_model("v2l70d35"+os.sep+"m1")
+			dqn.q_value_estimator.save_model("v2l70d35"+os.sep+"m2")
 			print("saved models after " + str(i) + " episodes.")
 	print("training done")
 
@@ -425,11 +423,12 @@ def main(args):
 	keras.backend.tensorflow_backend.set_session(sess)
 
 	# You want to create an instance of the DQN_Agent class here, and then train / test it.
-	#dqn = DQN_Agent('CartPole-v0',q_flag=1)
-	dqn = DQN_Agent('MountainCar-v0',q_flag=1)
-	dqn.q_b('models','saved_model',66) #Run code for question B single DQN 
-	#dqn.q_b('double_models','m1',66,file_base_2='m2') # Run code for question B double DQN
-
+	dqn = DQN_Agent('CartPole-v0',q_flag=2)
+	#dqn = DQN_Agent('MountainCar-v0',q_flag=1)
+	#train_double_dqn(dqn,save_freq=100)
+	#dqn.q_b('v2l70d35','saved_model',66) #Run code for question B single DQN 
+	dqn.q_b('v2ld35','m1',99,file_base_2='m2') # Run code for question B double DQN
+	#dqn.test(5,"v1ld/saved_model53.h5")
 
 
 	
