@@ -385,7 +385,7 @@ def parse_arguments():
 	parser.add_argument('--render',dest='render',type=int,default=0)
 	parser.add_argument('--train',dest='train',type=int,default=1)
 	parser.add_argument('--model',dest='model_file',type=str)
-	parser.add_argument('--q',dest='qflag',type=int)
+	parser.add_argument('--q',dest='qflag',type=int,default=1)
 	return parser.parse_args()
 
 def train_single_dqn(dqn,episodes = 10000,save_freq = 150):
