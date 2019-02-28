@@ -4,3 +4,4 @@ models-double/
 model-copies/
 fast_DQN.h5
 .DS_Store
+double-models
