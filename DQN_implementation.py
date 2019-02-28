@@ -202,8 +202,8 @@ class DQN_Agent():
 			self.gamma = 0.99
 			self.epsilon_decay = 0.000045
 		elif(environment_name == 'MountainCar-v0'):
-			self.gamma = .99
-			self.epsilon_decay = 0.000045
+			self.gamma = 1
+			self.epsilon_decay = 0.000035
 		self.pass_freq = 150
 
 		self.burn_in_memory()
@@ -265,7 +265,7 @@ class DQN_Agent():
 					temp = self.q_net
 					self.q_net = self.q_value_estimator
 					self.q_value_estimator = temp
-				if(0.5 >= np.random.uniform()):
+				if(self.epsilon >= np.random.uniform()):
 					action = np.random.randint(0,self.q_net.num_actions)
 				else:
 					q1s = self.q_net.predict(state,self.q_net.model)
@@ -385,6 +385,7 @@ def parse_arguments():
 	parser.add_argument('--render',dest='render',type=int,default=0)
 	parser.add_argument('--train',dest='train',type=int,default=1)
 	parser.add_argument('--model',dest='model_file',type=str)
+	parser.add_argument('--q',dest='qflag',type=int)
 	return parser.parse_args()
 
 def train_single_dqn(dqn,episodes = 10000,save_freq = 150):
@@ -419,6 +420,7 @@ def train_double_dqn(dqn,episodes= 10000,save_freq = 150):
 def main(args):
 
 	args = parse_arguments()
+	qflag = args.qflag
 	environment_name = args.env
 
 	# Setting the session to allow growth, so it doesn't allocate all GPU memory.
@@ -431,11 +433,14 @@ def main(args):
 
 	# You want to create an instance of the DQN_Agent class here, and then train / test it.
 	#dqn = DQN_Agent('CartPole-v0',q_flag=1)
-	dqn = DQN_Agent('MountainCar-v0',q_flag=1)
-	#train_single_dqn(dqn)
-	train_double_dqn(dqn)
-	#dqn.q_b('models','saved_model',66) #Run code for question B single DQN 
-	#dqn.q_b('models-double','m1',66,file_base_2='m2') # Run code for question B double DQN
+	dqn = DQN_Agent('MountainCar-v0',q_flag=qflag)
+	if(qflag == 1 or qflag == 0):
+		train_single_dqn(dqn)
+		dqn.q_b('models','saved_model',66) #Run code for question B single DQN 
+	else:
+		train_double_dqn(dqn)
+		dqn.q_b('models-double','m1',66,file_base_2='m2') # Run code for question B double DQN
+	
 	
 if __name__ == '__main__':
 	main(sys.argv)
