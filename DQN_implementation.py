@@ -36,7 +36,7 @@ class QNetwork():
 		self.file_count = 0
 		self.model_names = []
 
-		self.file_name = "v2l70d35/saved_model"
+		self.file_name = "models/saved_model"
 
 	def define_model(self,environment_name):
 		model = Sequential()
@@ -94,7 +94,6 @@ class QNetwork():
 			name = format(model_file + str(self.file_count) + ".h5")
 			self.model_names.append(name)
 		else:
-			self.file_count += 1
 			name = model_file + str(self.file_count) + ".h5"
 			
 		self.file_count += 1
@@ -331,7 +330,7 @@ class DQN_Agent():
 			total_rewards.append(total_reward)
 		return total_rewards
 
-	def burn_in_memory(self,burn_in=15000):
+	def burn_in_memory(self,burn_in=10000):
 		done = False
 		pol = self.random_policy()
 		state = self.env.reset()
