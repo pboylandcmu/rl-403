@@ -371,7 +371,7 @@ class DQN_Agent():
 			plt.title(self.environment_name + " DQN Performance plot")
 		plt.show()
 
-	def q_d(self,dir,file_base,model_count=66,file_base_2=None):
+	def q_e(self,dir,file_base,model_count=66,file_base_2=None):
 		if(file_base_2 is None and self.q_flag == 2):
 			print("q_d not called correctly")
 			exit(0)
@@ -395,7 +395,7 @@ def parse_arguments():
 	parser.add_argument('--model',dest='model_file',type=str)
 	parser.add_argument('--q',dest='qflag',type=int,default=1)
 	parser.add_argument('--q_b',dest='q_b',type=int,default=1)
-	parser.add_argument('--q_d',dest='q_d',type=int,default=1)
+	parser.add_argument('--q_e',dest='q_e',type=int,default=1)
 	return parser.parse_args()
 
 def train_single_dqn(dqn,episodes = 10000,save_freq = 150):
@@ -433,7 +433,7 @@ def main(args):
 	qflag = args.qflag
 	train = args.train
 	q_b = args.q_b
-	q_d = args.q_d
+	q_e = args.q_e
 	environment_name = args.env
 
 	# Setting the session to allow growth, so it doesn't allocate all GPU memory.
@@ -453,14 +453,14 @@ def main(args):
 		if(q_b):
 			dqn.q_b('models','saved_model') #Run code for question B single DQN 
 		if(q_d):
-			dqn.q_d('models','save_model')
+			dqn.q_e('models','save_model')
 	else:
 		if(train):
 			train_double_dqn(dqn)
 		if(q_b):
 			dqn.q_b('models-double','m1',file_base_2='m2') # Run code for question B double DQN
 		if(q_d):
-			dqn.q_d('models-double','m1',file_base_2='m2')
+			dqn.q_e('models-double','m1',file_base_2='m2')
 		
 if __name__ == '__main__':
 	main(sys.argv)
