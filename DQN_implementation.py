@@ -147,7 +147,7 @@ class Replay_Memory():
 		# A simple (if not the most efficient) was to implement the memory is as a list of transitions.
 		pass
 
-	def sample_batch(self, batch_size=48):
+	def sample_batch(self, batch_size=32):
 		if self.full:
 			return [self.memory[randint(0,self.memsize)] for _ in range(batch_size)]
 		return [self.memory[randint(0,self.counter)] for _ in range(batch_size)]
@@ -197,9 +197,11 @@ class DQN_Agent():
 		if(environment_name == 'CartPole-v0'):
 			self.gamma = 0.99
 			self.epsilon_decay = 0.000045
+			self.batch_size = 32
 		elif(environment_name == 'MountainCar-v0'):
 			self.gamma = 1
 			self.epsilon_decay = 0.000035
+			self.batch_size = 48
 		self.pass_freq = 150
 		self.burn_in_memory()
 
@@ -273,7 +275,7 @@ class DQN_Agent():
 			
 			self.replay_memory.append((old_state,action,reward,state,done))
 			
-			train_on = self.replay_memory.sample_batch()
+			train_on = self.replay_memory.sample_batch(batch_size = self.batch_size)
 			
 			states = [s for (_,_,_,s,_) in train_on]
 
