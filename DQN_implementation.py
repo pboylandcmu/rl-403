@@ -147,7 +147,7 @@ class Replay_Memory():
 		# A simple (if not the most efficient) was to implement the memory is as a list of transitions.
 		pass
 
-	def sample_batch(self, batch_size=32):
+	def sample_batch(self, batch_size=48):
 		if self.full:
 			return [self.memory[randint(0,self.memsize)] for _ in range(batch_size)]
 		return [self.memory[randint(0,self.counter)] for _ in range(batch_size)]
@@ -199,7 +199,7 @@ class DQN_Agent():
 			self.epsilon_decay = 0.000045
 		elif(environment_name == 'MountainCar-v0'):
 			self.gamma = 1
-			self.epsilon_decay = 0.000045
+			self.epsilon_decay = 0.000035
 		self.pass_freq = 150
 		self.burn_in_memory()
 
@@ -344,21 +344,21 @@ class DQN_Agent():
 
 		# Initialize your replay memory with a burn_in number of episodes / transitions.
 	
-	def q_b(self,dir,file_base,model_count,file_base_2 = None):
+	def q_b(self,dir,file_base,model_count=66,file_base_2 = None):
 		y = []
 		x = []
 		count = 150
 		if(file_base_2 is None and self.q_flag == 2):
 			print("q_b not called correctly")
 			exit(0)
-		for i in range(1,model_count+1):
+		for i in range(model_count):
 			file_name = dir + os.sep + file_base + str(i) + '.h5'
 			if(self.q_flag == 2):
 				file_name_2 = dir + os.sep + file_base_2 + str(i) + '.h5'
 			else:
 				file_name_2 = None
 			rewards = self.test(20,file_name,model_file_2= file_name_2)
-			print(str(150*i) + " episodes : mean = " + str(np.mean(rewards)))
+			print(str(150*i + 150) + " episodes : mean = " + str(np.mean(rewards)))
 			y.append(np.mean(rewards))
 			x.append(count)
 			count += 150
@@ -371,6 +371,21 @@ class DQN_Agent():
 			plt.title(self.environment_name + " DQN Performance plot")
 		plt.show()
 
+	def q_d(self,dir,file_base,model_count=66,file_base_2=None):
+		if(file_base_2 is None and self.q_flag == 2):
+			print("q_d not called correctly")
+			exit(0)
+		file_name = dir + os.sep + file_base + str(model_count-1) + '.h5'
+		if(self.q_flag == 2):
+			file_name_2 = dir + os.sep + file_base_2 + str(model_count-1) + '.h5'
+		else:
+			file_name_2 = None
+		
+		rewards = self.test(100,file_name,model_file_2 = file_name_2)
+		mean = np.mean(rewards)
+		std = np.std(rewards)
+		print("q_d result: mean = ", mean, ", std = ",std)
+
 
 def parse_arguments():
 	parser = argparse.ArgumentParser(description='Deep Q Network Argument Parser')
@@ -379,6 +394,8 @@ def parse_arguments():
 	parser.add_argument('--train',dest='train',type=int,default=1)
 	parser.add_argument('--model',dest='model_file',type=str)
 	parser.add_argument('--q',dest='qflag',type=int,default=1)
+	parser.add_argument('--q_b',dest='q_b',type=int,default=1)
+	parser.add_argument('--q_d',dest='q_d',type=int,default=1)
 	return parser.parse_args()
 
 def train_single_dqn(dqn,episodes = 10000,save_freq = 150):
@@ -414,6 +431,9 @@ def main(args):
 
 	args = parse_arguments()
 	qflag = args.qflag
+	train = args.train
+	q_b = args.q_b
+	q_d = args.q_d
 	environment_name = args.env
 
 	# Setting the session to allow growth, so it doesn't allocate all GPU memory.
@@ -428,11 +448,19 @@ def main(args):
 	#dqn = DQN_Agent('CartPole-v0',q_flag=1)
 	dqn = DQN_Agent('MountainCar-v0',q_flag=qflag)
 	if(qflag == 1 or qflag == 0):
-		train_single_dqn(dqn)
-		dqn.q_b('models','saved_model',66) #Run code for question B single DQN 
+		if(train):
+			train_single_dqn(dqn)
+		if(q_b):
+			dqn.q_b('models','saved_model') #Run code for question B single DQN 
+		if(q_d):
+			dqn.q_d('models','save_model')
 	else:
-		train_double_dqn(dqn)
-		dqn.q_b('models-double','m1',66,file_base_2='m2') # Run code for question B double DQN
+		if(train):
+			train_double_dqn(dqn)
+		if(q_b):
+			dqn.q_b('models-double','m1',file_base_2='m2') # Run code for question B double DQN
+		if(q_d):
+			dqn.q_d('models-double','m1',file_base_2='m2')
 		
 if __name__ == '__main__':
 	main(sys.argv)
