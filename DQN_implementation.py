@@ -302,15 +302,20 @@ class DQN_Agent():
 		self.epsilon -= self.epsilon_decay
 		return tot_reward
 
-	def test(self,episodes,model_file,model_file_2=None,lookahead = False):
+	def test(self,episodes,model_file,model_file_2=None,lookahead = False, video = None):
 		# Evaluate the performance of your agent over 100 episodes, by calculating cummulative rewards for the 100 episodes.
 		# Here you need to interact with the environment, irrespective of whether you are using a memory.
 		self.q_net.load_model(model_file)
 		if(model_file_2 is not None):
 			self.q_value_estimator.load_model(model_file_2)
 		total_rewards = []
+		self.env.reset()
+		if video is not None:
+			env = gym.wrappers.Monitor(self.env, video, force=True)
+		print(model_file)
 		for _ in range(episodes):
-			state = self.env.reset()
+			
+			state = env.reset()
 			done = False
 			total_reward = 0
 			while not done:
@@ -324,7 +329,7 @@ class DQN_Agent():
 					value2 = self.q_value_estimator.q_values(state)
 					total_value = np.add(value1,value2)
 					action = np.argmax(total_value)
-				state, reward, done, _ = self.env.step(action)
+				state, reward, done, _ = env.step(action)
 				#self.env.render()
 				total_reward += reward
 			total_rewards.append(total_reward)
@@ -371,9 +376,25 @@ class DQN_Agent():
 			plt.title(self.environment_name + " DQN Performance plot")
 		plt.show()
 
-	def q_d(self,dir,file_base,model_count=66,file_base_2=None):
+	def q_d(self,dir,file_base,video_dir,model_count=66,file_base_2=None):
 		if(file_base_2 is None and self.q_flag == 2):
-			print("q_d not called correctly")
+			print("q_e not called correctly")
+			exit(0)
+		
+		for i in range(1,4):
+			print(i*model_count/3)
+			file_name = dir + os.sep + file_base + str(i*model_count/3) + '.h5'
+			if(self.q_flag == 2):
+				file_name_2 = dir + os.sep + file_base_2 + str(i*model_count/3) + '.h5'
+			else:
+				file_name_2 = None
+
+			self.test(1,file_name,model_file_2 = file_name_2,video=video_dir)
+
+
+	def q_e(self,dir,file_base,model_count=66,file_base_2=None):
+		if(file_base_2 is None and self.q_flag == 2):
+			print("q_e not called correctly")
 			exit(0)
 		file_name = dir + os.sep + file_base + str(model_count-1) + '.h5'
 		if(self.q_flag == 2):
@@ -384,7 +405,7 @@ class DQN_Agent():
 		rewards = self.test(100,file_name,model_file_2 = file_name_2)
 		mean = np.mean(rewards)
 		std = np.std(rewards)
-		print("q_d result: mean = ", mean, ", std = ",std)
+		print("q_e result: mean = ", mean, ", std = ",std)
 
 
 def parse_arguments():
@@ -396,6 +417,7 @@ def parse_arguments():
 	parser.add_argument('--q',dest='qflag',type=int,default=1)
 	parser.add_argument('--q_b',dest='q_b',type=int,default=1)
 	parser.add_argument('--q_d',dest='q_d',type=int,default=1)
+	parser.add_argument('--q_e',dest='q_e',type=int,default=1)
 	return parser.parse_args()
 
 def train_single_dqn(dqn,episodes = 10000,save_freq = 150):
@@ -434,6 +456,7 @@ def main(args):
 	train = args.train
 	q_b = args.q_b
 	q_d = args.q_d
+	q_e = args.q_e
 	environment_name = args.env
 
 	# Setting the session to allow growth, so it doesn't allocate all GPU memory.
@@ -453,14 +476,16 @@ def main(args):
 		if(q_b):
 			dqn.q_b('models','saved_model') #Run code for question B single DQN 
 		if(q_d):
-			dqn.q_d('models','save_model')
+			dqn.q_d('Finished-Mountain-Car/models','saved_model','Single-Video',model_count=66,file_base_2=None) #Run code for question B single DQN 
+		if(q_e):
+			dqn.q_e('models','save_model')
 	else:
 		if(train):
 			train_double_dqn(dqn)
 		if(q_b):
 			dqn.q_b('models-double','m1',file_base_2='m2') # Run code for question B double DQN
-		if(q_d):
-			dqn.q_d('models-double','m1',file_base_2='m2')
+		if(q_e):
+			dqn.q_e('models-double','m1',file_base_2='m2')
 		
 if __name__ == '__main__':
 	main(sys.argv)
