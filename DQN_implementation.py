@@ -454,14 +454,14 @@ def main(args):
 			train_single_dqn(dqn)
 		if(q_b):
 			dqn.q_b('models','saved_model') #Run code for question B single DQN 
-		if(q_d):
-			dqn.q_e('models','save_model')
+		if(q_e):
+			dqn.q_e('models','saved_model')
 	else:
 		if(train):
 			train_double_dqn(dqn)
 		if(q_b):
 			dqn.q_b('models-double','m1',file_base_2='m2') # Run code for question B double DQN
-		if(q_d):
+		if(q_e):
 			dqn.q_e('models-double','m1',file_base_2='m2')
 		
 if __name__ == '__main__':
