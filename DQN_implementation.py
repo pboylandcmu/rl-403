@@ -313,7 +313,7 @@ class DQN_Agent():
 		total_rewards = []
 		self.env.reset()
 		if video is not None:
-			env = gym.wrappers.Monitor(self.env, video, force=True)
+			env = gym.wrappers.Monitor(self.env, video + model_file, force=True)
 		print(model_file)
 		for _ in range(episodes):
 			
@@ -385,9 +385,9 @@ class DQN_Agent():
 		
 		for i in range(1,4):
 			print(i*model_count/3)
-			file_name = dir + os.sep + file_base + str(i*model_count/3) + '.h5'
+			file_name = dir + os.sep + file_base + str(i*model_count/3-1) + '.h5'
 			if(self.q_flag == 2):
-				file_name_2 = dir + os.sep + file_base_2 + str(i*model_count/3) + '.h5'
+				file_name_2 = dir + os.sep + file_base_2 + str(i*model_count/3-1) + '.h5'
 			else:
 				file_name_2 = None
 
@@ -470,15 +470,15 @@ def main(args):
 	keras.backend.tensorflow_backend.set_session(sess)
 
 	# You want to create an instance of the DQN_Agent class here, and then train / test it.
-	#dqn = DQN_Agent('CartPole-v0',q_flag=1)
-	dqn = DQN_Agent('MountainCar-v0',q_flag=qflag)
+	dqn = DQN_Agent('CartPole-v0',q_flag=qflag)
+	#dqn = DQN_Agent('MountainCar-v0',q_flag=qflag)
 	if(qflag == 1 or qflag == 0):
 		if(train):
 			train_single_dqn(dqn)
 		if(q_b):
 			dqn.q_b('models','saved_model') #Run code for question B single DQN 
 		if(q_d):
-			dqn.q_d('Finished-Mountain-Car/models','saved_model','Single-Video',model_count=66,file_base_2=None) #Run code for question B single DQN 
+			dqn.q_d('v1ld35','saved_model','Videos/',model_count=66,file_base_2=None) #Run code for question B single DQN 
 		if(q_e):
 			dqn.q_e('models','saved_model')
 	else:
@@ -486,6 +486,8 @@ def main(args):
 			train_double_dqn(dqn)
 		if(q_b):
 			dqn.q_b('models-double','m1',file_base_2='m2') # Run code for question B double DQN
+		if(q_d):
+			dqn.q_d('v2l70d35','m1','Videos/',model_count=66,file_base_2='m2') #Run code for question B single DQN 
 		if(q_e):
 			dqn.q_e('models-double','m1',file_base_2='m2')
 		
