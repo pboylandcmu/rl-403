@@ -379,6 +379,7 @@ class DQN_Agent():
 			y.append(np.mean(rewards))
 			x.append(count)
 			count += 150
+			keras.backend.clear_session()
 		plt.plot(x,y)
 		plt.xlabel("episodes")
 		plt.ylabel("average reward")
@@ -413,6 +414,7 @@ class DQN_Agent():
 			y.append(np.mean(rewards))
 			x.append(count)
 			count += inc
+			keras.backend.clear_session()
 		plt.plot(x,y)
 		plt.xlabel("episodes")
 		plt.ylabel("average reward")
@@ -521,6 +523,8 @@ def main(args):
 	if(qflag == 1 or qflag == 0):
 		if(train):
 			train_single_dqn(dqn)
+		#these next couple methods have the form
+		# dqn.q_(directory_name,saved_model_name)
 		if(q_b):
 			dqn.q_b('models','saved_model') #Run code for question B single DQN
 		if(q_c):
@@ -532,6 +536,8 @@ def main(args):
 	else:
 		if(train):
 			train_double_dqn(dqn)
+		#these next couple methods have the form
+		# dqn.q_(directory_name,saved_model_name,file_base_2 = other saved model name)
 		if(q_b):
 			dqn.q_b('models-double','m1',file_base_2='m2') # Run code for question B double DQN
 		if(q_c):
