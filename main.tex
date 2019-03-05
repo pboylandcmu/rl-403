@@ -158,6 +158,36 @@ p(x) = \frac{1}{2}(1+x) -1\leq x \leq 1 \\
 = .775 = Var[f(x)]
 \end{align*}
 2:
+\begin{itemize}
+    \item 10000 samples: Expectation of 0.7902, variance of 0.7732.
+    \item 1000 samples: Expectation of 0.7815, variance of 0.7779.
+    \item 10 samples: Expectation of 0.3831, variance of 0.1315
+\end{itemize}
+I observe that the sample expectation and variance gets closer to the true expectation and variance as the number of samples increases.
+
+3.
+
+For the first q function:
+\begin{itemize}
+    \item 10000 samples: Mean of 0.8058, variance of 34.1363.
+    \item 1000 samples: Mean of 0.6330, variance of 28.4718.
+    \item 10 samples: Mean of 0, variance of 0.
+\end{itemize}
+
+For the second q function:
+\begin{itemize}
+    \item 10000 samples: Mean of 0.8006, variance of 4.2875.
+    \item 1000 samples: Mean of 0.7771, variance of 4.3872.
+    \item 10 samples: Mean of 0.3692, variance of 1.0848.
+\end{itemize}
+
+For the third q function:
+\begin{itemize}
+    \item 
+    \item
+    \item
+\end{itemize}
+
 \end{solution}
 % 2 + 2 + 7 = 11
 \section*{Question 3 \textbf{[4+4+7=15 pts]}}
@@ -268,6 +298,26 @@ There should be an entry per model. Briefly comment on the results of this table
 \end{enumerate}
 
 \noindent
+
+\begin{solution}
+\section{1a and 2a}
+We played around a lot with hyperparameters. For our base network, we discovered that a broader and shallower network was able to find a correct solution within a reasonable amount of time. We used three dense layers with ReLU activation functions, followed by a final linear layer whose desired learned output is the q-values of each action given an input state. We used Adam as recommended, and MSE as the loss function. The intial epsilon (random choice probability) seemed to cause significant improvements by being raised from $0.5$, so we left it there.
+
+The hyper-parameters we spent the most time tuning were the learning rate and the epsilon-decay rate. In the end we used a learning rate of 0.00001 and epsilon-decay of 0 for the cartpole environment and single network. The decay setting was an accident, but it worked, so we went with it. A learning rate of .000007 for the double network, and decay of 0.000035 worked to produce even better results. The low learning rate was absolutely necessary for the cartpole environment though - without it, our performance curve was unable to stay at the solved level for any significant amount of time.
+
+For the mountaincar environment, too low of a learning rate didn't allow it to learn a solution fast enough, so we went with the learning rate 0.0001, as described in the hyperparamater guidelines.
+
+\section{1b and 2b}
+
+As expected since the Cartpole environment is very easy to solve, the cartpole performance graphs shoot up faster and once reaching their apex are more reliably stationary.
+
+\section{1d and 2d}
+The video-capture is in the zip, as requested.
+
+\section{1e and 2e}
+
+
+\end{solution}
 
 We recommend you to follow closely the hyperparameter setup described below.
 
