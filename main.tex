@@ -352,6 +352,9 @@ The loss for Cartpole steadily increased. We hypothesize this is due to more sta
 \section{1c and 2c}
 Two step lookahead performs worse for the single DQN cartpole, with more noise in performance.This may be due to the fact that Q networks are susceptible to overestimating the value of states that are not often visited, and two step lookahead allows for taking actions that would never be taken under a greedy policy.
 \includegraphics[scale=0.5]{Completed_Graphs/Lookahead_SingleQ.png}\\
+
+Two step lookahead performs almost exactly as well for double DQN, due to more stable Q values\\
+\includegraphics[scale=0.5]{Completed_Graphs/Lookahead_DoubleQ.png}\\
 \section{1d and 2d}
 The video-capture is in the zip, as requested.
 
