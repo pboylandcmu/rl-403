@@ -517,7 +517,10 @@ def main(args):
 	# Setting this as the default tensorflow session.
 	keras.backend.tensorflow_backend.set_session(sess)
 
-	# You want to create an instance of the DQN_Agent class here, and then train / test it.
+	'''
+	Stuff referenced in the Readme is below this comment
+	'''
+
 	dqn = DQN_Agent('CartPole-v0',q_flag=qflag)
 	#dqn = DQN_Agent('MountainCar-v0',q_flag=qflag)
 	if(qflag == 1 or qflag == 0):
