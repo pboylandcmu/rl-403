@@ -203,19 +203,21 @@ class DQN_Agent():
 		self.pass_freq = 150
 		self.burn_in_memory()
 
-	def lookahead_policy(self,q_values,state):
+	def lookahead_policy(self,q_values,env):
 		best_action = 0
 		best_value = float('-inf')
-		state = self.env.state
+		env = env.unwrapped
+		state = env.state
+		temp = env.steps_beyond_done
 		for a in range(0,2):
-			s,reward,done = self.env.step(a)
+			s,reward,done,_ = env.step(a)
 			if(done):
 				if(reward > best_value):
 					best_value = reward
 					best_action = a
 				continue
 			for b in range(0,2):
-				s2 ,reward,done = self.env.step(b)
+				s2 ,reward,done,_ = env.step(b)
 				if(self.q_flag == 2):
 					value1 = self.q_net.q_values(s2)
 					value2 = self.q_value_estimator.q_values(s2)
@@ -226,9 +228,15 @@ class DQN_Agent():
 				if(value > best_value):
 					best_value = value
 					best_action = a
-				self.env.state = s
-			self.env.state = state
-		self.env.state = state
+				env.state = s
+				env.done = False
+				env.steps_beyond_done = temp
+			env.state = state
+			env.done = False
+			env.steps_beyond_done = temp
+		env.state = state
+		env.steps_beyond_done = temp
+		env.done = False
 		return best_action
 
 	def random_policy(self):
@@ -326,7 +334,7 @@ class DQN_Agent():
 			while not done:
 				#self.env.render()
 				if(lookahead):
-					action = self.lookahead_policy(self.q_net,state)
+					action = self.lookahead_policy(self.q_net,env)
 				elif(self.q_flag == 1 or self.q_flag == 0): 
 					action = self.q_net.epsilon_greedy_action(state,0)
 				elif(self.q_flag == 2):
@@ -372,6 +380,7 @@ class DQN_Agent():
 			y.append(np.mean(rewards))
 			x.append(count)
 			count += 150
+			keras.backend.clear_session()
 		plt.plot(x,y)
 		plt.xlabel("episodes")
 		plt.ylabel("average reward")
@@ -379,6 +388,41 @@ class DQN_Agent():
 			plt.title(self.environment_name + " Double DQN Performance plot")
 		else:
 			plt.title(self.environment_name + " DQN Performance plot")
+		plt.show()
+
+	def q_c(self,dir,file_base,file_base_2 = None):
+		if(self.q_flag == 2):
+			model_count = 100
+			count = 100
+			inc = 100
+		else:
+			model_count = 66
+			count = 150
+			inc = 150
+		y = []
+		x = []
+		if(file_base_2 is None and self.q_flag == 2):
+			print("q_c not called correctly")
+			exit(0)
+		for i in range(model_count+1):
+			file_name = dir + os.sep + file_base + str(i+1) + '.h5'
+			if(self.q_flag == 2):
+				file_name_2 = dir + os.sep + file_base_2 + str(i+1) + '.h5'
+			else:
+				file_name_2 = None
+			rewards = self.test(20,file_name,model_file_2= file_name_2,lookahead = True)
+			print(str(inc*i + inc) + " episodes : mean = " + str(np.mean(rewards)))
+			y.append(np.mean(rewards))
+			x.append(count)
+			count += inc
+			keras.backend.clear_session()
+		plt.plot(x,y)
+		plt.xlabel("episodes")
+		plt.ylabel("average reward")
+		if self.q_flag == 2:
+			plt.title(self.environment_name + "Two Step Lookahead Double DQN Performance plot")
+		else:
+			plt.title(self.environment_name + "Two Step Lookahead DQN Performance plot")
 		plt.show()
 
 	def q_d(self,dir,file_base,video_dir,model_count=66,file_base_2=None):
@@ -421,6 +465,7 @@ def parse_arguments():
 	parser.add_argument('--model',dest='model_file',type=str)
 	parser.add_argument('--q',dest='qflag',type=int,default=1)
 	parser.add_argument('--q_b',dest='q_b',type=int,default=1)
+	parser.add_argument('--q_c',dest='q_c',type=int,default=1)
 	parser.add_argument('--q_d',dest='q_d',type=int,default=1)
 	parser.add_argument('--q_e',dest='q_e',type=int,default=1)
 	parser.add_argument('--q_f',dest='q_f',type=int,default=0)
@@ -468,6 +513,7 @@ def main(args):
 	qflag = args.qflag
 	train = args.train
 	q_b = args.q_b
+	q_c = args.q_c
 	q_d = args.q_d
 	q_e = args.q_e
 	q_f = args.q_f
@@ -481,14 +527,21 @@ def main(args):
 	# Setting this as the default tensorflow session.
 	keras.backend.tensorflow_backend.set_session(sess)
 
-	# You want to create an instance of the DQN_Agent class here, and then train / test it.
-	#dqn = DQN_Agent('CartPole-v0',q_flag=qflag)
-	dqn = DQN_Agent('MountainCar-v0',q_flag=qflag)
+	'''
+	Stuff referenced in the Readme is below this comment
+	'''
+
+	dqn = DQN_Agent('CartPole-v0',q_flag=qflag)
+	#dqn = DQN_Agent('MountainCar-v0',q_flag=qflag)
 	if(qflag == 1 or qflag == 0):
 		if(train):
 			losses = train_single_dqn(dqn)
+		#these next couple methods have the form
+		# dqn.q_(directory_name,saved_model_name)
 		if(q_b):
-			dqn.q_b('v1ld35','saved_model') #Run code for question B single DQN 
+			dqn.q_b('models','saved_model') #Run code for question B single DQN
+		if(q_c):
+			dqn.q_c('v1ld35','saved_model')
 		if(q_d):
 			dqn.q_d('v1ld35','saved_model','Videos/',model_count=66,file_base_2=None) #Run code for question B single DQN 
 		if(q_e):
@@ -499,12 +552,16 @@ def main(args):
 	else:
 		if(train):
 			losses = train_double_dqn(dqn)
+		#these next couple methods have the form
+		# dqn.q_(directory_name,saved_model_name,file_base_2 = other saved model name)
 		if(q_b):
 			dqn.q_b('models-double','m1',file_base_2='m2') # Run code for question B double DQN
+		if(q_c):
+			dqn.q_c('v2l70d35','m1',file_base_2='m2')
 		if(q_d):
 			dqn.q_d('v2l70d35','m1','Videos/',model_count=66,file_base_2='m2') #Run code for question B single DQN 
 		if(q_e):
-			dqn.q_e('models-double','m1',file_base_2='m2')
+			dqn.q_e('models-double','m1',file_base_2='m2',model_count = 66)
 		if (q_f):
 			plt.plot(range(len(losses)),losses)
 			plt.show()

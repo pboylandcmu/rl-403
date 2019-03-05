@@ -311,12 +311,30 @@ For the mountaincar environment, too low of a learning rate didn't allow it to l
 
 As expected since the Cartpole environment is very easy to solve, the cartpole performance graphs shoot up faster and once reaching their apex are more reliably stationary.
 
+\includegraphics[scale=0.8]{Completed_Graphs/Cartpole_Single_Q.png}\\
+\includegraphics[scale=0.8]{Completed_Graphs/Cartpole_Double_Q.png}
+
+Single DQN had trouble solving mountain car without significant noise in the performance graph. Double DQN had a much more stable performance with a higher end score.  This may be due to having a more stable target to train towards.
+\includegraphics[scale=0.5]{Completed_Graphs/mountaincar_single_Q.png}\\
+\includegraphics[scale=0.37]{Completed_Graphs/Double_DQN_performance_mountaincar.png}
+
+\section{1c and 2c}
+Two step lookahead performs worse for the single DQN cartpole, with more noise in performance.This may be due to the fact that Q networks are susceptible to overestimating the value of states that are not often visited, and two step lookahead allows for taking actions that would never be taken under a greedy policy.
+\includegraphics[scale=0.5]{Completed_Graphs/Lookahead_SingleQ.png}\\
 \section{1d and 2d}
 The video-capture is in the zip, as requested.
 
 \section{1e and 2e}
+\begin{tabular}{|c|c|c|c|l}
+\hline
+Environment & Type & Mean & STD   \\ \hline
+  CartPole & DQN  & 200  & 0   \\ \hline
+  CartPole & Double DQN  & 200  & 0   \\ \hline
+  Mountain Car & DQN  & -123.88  & 34.3   \\ \hline
+    Mountain Car & Double DQN  & -107.35  & 8.16  \\ \hline
+\end{tabular}\\
 
-
+Cartpole acheived perfect performance by the end of training.  Double DQN mountain car achieved a much more consistent and higher score.  This is consistent with the general trend on the performance graphs.
 \end{solution}
 
 We recommend you to follow closely the hyperparameter setup described below.

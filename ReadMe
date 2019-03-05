@@ -1,0 +1,32 @@
+ReadMe
+
+* our apologies first
+
+There are helper methods written for train and parts b-e of the writeup.
+You can select what runs via command line flags
+ex. Python DQN_implementation.py --q_b 0 --q_c 0 --q_d 0 --q_e 0 --train 0 --q 1
+q_b through train in the example do not run if given the value zero, and run otherwise
+--q determines the type of q network (1 for single and 2 for double)
+
+If you inspect our code, ignore all reference to q_flag = 0 
+(we just did some accidental extra work)
+
+To choose the correct environment for Gym, there are two lines in main
+which instantiate the DQN_Agent with different environments.  Keep one 
+of them commented out.
+
+for q = 1:
+train will save the model into the folder models/saved_model(n) 
+To change the name of the directory opened containing a saved model in
+parts b through e requires changing the actual code in main 
+(very simple change, there are comments in the code after the line if(q_flag == 1))
+
+for q = 2:
+train will save the models into the folder models-double/m1(n) and models-double/m2(n)
+where n is an index for the model (0 to number of models)
+Changing parts b-e requires a similar change to the main method
+
+If for some reason you actually called our train:
+be warned that it will crash if you have not created a directory called models or 
+double_models depending
+
