@@ -189,6 +189,31 @@ For the third q function:
 \end{itemize}
 
 The proposal distribution with the lowest variance is the third - as it is a constant multiple (and so the same pdf) of f(x)*p(x) the importance ratios are going to match it very well. The slowest convergence is from the normal distribution around 3, because most of the samples it comes up with have 0 probability under the true distribution.
+
+4.
+
+For the first q function:
+\begin{itemize}
+    \item 10000 samples: Mean is 0.739, Variance of 28.6859.
+    \item 1000 samples: Mean 0.8921, variance of 56.5537
+    \item 10 samples: Mean and variance are N/A.
+\end{itemize}
+
+For the second q function:
+\begin{itemize}
+    \item 10000 samples: Mean is 0.8019, variance of 4.3010
+    \item 1000 samples: Mean is 0.8121, variance of 4.7912
+    \item 10 samples: Mean is 0.4886, variance of 1.9003
+\end{itemize}
+
+For the third q function:
+\begin{itemize}
+    \item 10000 samples: Mean is 0.8497, variance 3.7081e-32.
+    \item 1000 samples: Mean is 0.9183, variance 4.1773e-32
+    \item 10 samples: Mean is 1.6, variance 5.9165e-32
+\end{itemize}
+
+There appears to be a bias, though it weakens as the number of samples grows. The extremely low variance is interesting though.
 \end{solution}
 % 2 + 2 + 7 = 11
 \section*{Question 3 \textbf{[4+4+7=15 pts]}}
