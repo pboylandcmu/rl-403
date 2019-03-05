@@ -305,7 +305,7 @@ We played around a lot with hyperparameters. For our base network, we discovered
 
 The hyper-parameters we spent the most time tuning were the learning rate and the epsilon-decay rate. In the end we used a learning rate of 0.00001 and epsilon-decay of 0 for the cartpole environment and single network. The decay setting was an accident, but it worked, so we went with it. A learning rate of .000007 for the double network, and decay of 0.000035 worked to produce even better results. The low learning rate was absolutely necessary for the cartpole environment though - without it, our performance curve was unable to stay at the solved level for any significant amount of time.
 
-For the mountaincar environment, too low of a learning rate didn't allow it to learn a solution fast enough, so we went with the learning rate 0.0001, as described in the hyperparamater guidelines.
+For the mountaincar environment, too low of a learning rate didn't allow it to learn a solution fast enough, so we went with the learning rate 0.0001, as described in the hyperparamater guidelines. In order to facilitate more training in the number of episodes we were given, we upped the batch size to 48. Along with keeping epsilon at  0.000035, this achieved sufficient performance.
 
 \section{1b and 2b}
 
