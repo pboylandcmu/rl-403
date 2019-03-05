@@ -403,7 +403,7 @@ class DQN_Agent():
 		if(file_base_2 is None and self.q_flag == 2):
 			print("q_c not called correctly")
 			exit(0)
-		for i in range(model_count+1):
+		for i in range(model_count):
 			file_name = dir + os.sep + file_base + str(i+1) + '.h5'
 			if(self.q_flag == 2):
 				file_name_2 = dir + os.sep + file_base_2 + str(i+1) + '.h5'
