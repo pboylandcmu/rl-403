@@ -11,6 +11,10 @@ q_b through train in the example do not run if given the value zero, and run oth
 If you inspect our code, ignore all reference to q_flag = 0 
 (we just did some accidental extra work)
 
+To choose the correct environment for Gym, there are two lines in main
+which instantiate the DQN_Agent with different environments.  Keep one 
+of them commented out.
+
 for q = 1:
 train will save the model into the folder models/saved_model(n) 
 To change the name of the directory opened containing a saved model in

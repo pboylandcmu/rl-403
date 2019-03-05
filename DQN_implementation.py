@@ -22,7 +22,7 @@ class QNetwork():
 		if(environment_name == 'CartPole-v0'):
 			self.num_actions = 2
 			self.state_size = 4
-			self.learning_rate = 0.000007
+			self.learning_rate = 0.00001
 		elif(environment_name == 'MountainCar-v0'):
 			self.num_actions = 3
 			self.state_size = 2
@@ -36,7 +36,7 @@ class QNetwork():
 		self.file_count = 0
 		self.model_names = []
 
-		self.file_name = "models/saved_model"
+		self.file_name = "models-mount2/saved_model"
 
 	def define_model(self,environment_name):
 		model = Sequential()
@@ -116,10 +116,8 @@ class QNetwork():
 		for i in range(len(D)):
 			(_,action,target) = D[i]
 			outs[i][action] = target
-		self.model.fit(x=np.array(states),y=np.array(outs),epochs=epochs,verbose=verbosity)
-        #score = model.evaluate(states,targets)
-        #print(score)
-        #return score[1]
+		his = self.model.fit(x=np.array(states),y=np.array(outs),epochs=epochs,verbose=verbosity)
+		return his.history['loss'][0]
 
 	'''
 	def load_model_weights(self,weight_file):
@@ -196,7 +194,7 @@ class DQN_Agent():
 
 		if(environment_name == 'CartPole-v0'):
 			self.gamma = 0.99
-			self.epsilon_decay = 0.000045
+			self.epsilon_decay = 0
 			self.batch_size = 32
 		elif(environment_name == 'MountainCar-v0'):
 			self.gamma = 1
@@ -260,6 +258,8 @@ class DQN_Agent():
 		done = False
 		state = self.env.reset()
 
+		losses = []
+
 		tot_reward = 0
 		while not done:
 			if self.q_flag == 2:
@@ -302,7 +302,8 @@ class DQN_Agent():
 				reward = r if d else r + self.gamma * values[i]
 				q_pairs.append((s1,a,reward))
 			
-			self.q_net.fit(q_pairs)
+			losses.append(self.q_net.fit(q_pairs))
+			
 			#self.env.render()
 
 		#print("choosing time is " + str(choosing_time))
@@ -310,7 +311,7 @@ class DQN_Agent():
 		#print("fitting time is " + str(fitting_time))
 			
 		self.epsilon -= self.epsilon_decay
-		return tot_reward
+		return tot_reward, losses
 
 	def test(self,episodes,model_file,model_file_2=None,lookahead = False, video = None):
 		# Evaluate the performance of your agent over 100 episodes, by calculating cummulative rewards for the 100 episodes.
@@ -368,7 +369,7 @@ class DQN_Agent():
 		if(file_base_2 is None and self.q_flag == 2):
 			print("q_b not called correctly")
 			exit(0)
-		for i in range(model_count):
+		for i in range(1,model_count):
 			file_name = dir + os.sep + file_base + str(i) + '.h5'
 			if(self.q_flag == 2):
 				file_name_2 = dir + os.sep + file_base_2 + str(i) + '.h5'
@@ -467,13 +468,17 @@ def parse_arguments():
 	parser.add_argument('--q_c',dest='q_c',type=int,default=1)
 	parser.add_argument('--q_d',dest='q_d',type=int,default=1)
 	parser.add_argument('--q_e',dest='q_e',type=int,default=1)
+	parser.add_argument('--q_f',dest='q_f',type=int,default=0)
+
 	return parser.parse_args()
 
 def train_single_dqn(dqn,episodes = 10000,save_freq = 150):
 	rewards = []
+	all_losses = []
 	for i in range(episodes):
 		print(i)
-		reward = dqn.train()
+		reward,losses = dqn.train()
+		all_losses.append(losses)
 		print("score = ",reward)
 		rewards.append(reward)
 		print("running average " + str(np.mean(rewards) if len(rewards) < 51 else np.mean(rewards[-50:])))
@@ -483,12 +488,15 @@ def train_single_dqn(dqn,episodes = 10000,save_freq = 150):
 		if (i + 1) % dqn.pass_freq == 0:
 			dqn.update_slow_network()
 	print("training done")
+	return [loss for eploss in all_losses for loss in eploss]
 
 def train_double_dqn(dqn,episodes= 10000,save_freq = 150):
 	rewards = []
+	all_losses = []
 	for i in range(episodes):
 		print(i)
-		reward = dqn.train()
+		reward,losses = dqn.train()
+		all_losses.append(losses)
 		print("score = ",reward)
 		rewards.append(reward)
 		print("running average " + str(np.mean(rewards) if len(rewards) < 51 else np.mean(rewards[-50:])))
@@ -497,6 +505,7 @@ def train_double_dqn(dqn,episodes= 10000,save_freq = 150):
 			dqn.q_value_estimator.save_model(model_file="models-double"+os.sep+"m2")
 			print("saved models after " + str(i) + " episodes.")
 	print("training done")
+	return [loss for eploss in all_losses for loss in eploss]
 
 def main(args):
 
@@ -507,6 +516,7 @@ def main(args):
 	q_c = args.q_c
 	q_d = args.q_d
 	q_e = args.q_e
+	q_f = args.q_f
 	environment_name = args.env
 
 	# Setting the session to allow growth, so it doesn't allocate all GPU memory.
@@ -517,12 +527,15 @@ def main(args):
 	# Setting this as the default tensorflow session.
 	keras.backend.tensorflow_backend.set_session(sess)
 
-	# You want to create an instance of the DQN_Agent class here, and then train / test it.
+	'''
+	Stuff referenced in the Readme is below this comment
+	'''
+
 	dqn = DQN_Agent('CartPole-v0',q_flag=qflag)
 	#dqn = DQN_Agent('MountainCar-v0',q_flag=qflag)
 	if(qflag == 1 or qflag == 0):
 		if(train):
-			train_single_dqn(dqn)
+			losses = train_single_dqn(dqn)
 		#these next couple methods have the form
 		# dqn.q_(directory_name,saved_model_name)
 		if(q_b):
@@ -533,9 +546,12 @@ def main(args):
 			dqn.q_d('v1ld35','saved_model','Videos/',model_count=66,file_base_2=None) #Run code for question B single DQN 
 		if(q_e):
 			dqn.q_e('models','saved_model')
+		if (q_f):
+			plt.plot(range(len(losses)),losses)
+			plt.show()
 	else:
 		if(train):
-			train_double_dqn(dqn)
+			losses = train_double_dqn(dqn)
 		#these next couple methods have the form
 		# dqn.q_(directory_name,saved_model_name,file_base_2 = other saved model name)
 		if(q_b):
@@ -546,6 +562,9 @@ def main(args):
 			dqn.q_d('v2l70d35','m1','Videos/',model_count=66,file_base_2='m2') #Run code for question B single DQN 
 		if(q_e):
 			dqn.q_e('models-double','m1',file_base_2='m2',model_count = 66)
+		if (q_f):
+			plt.plot(range(len(losses)),losses)
+			plt.show()
 		
 if __name__ == '__main__':
 	main(sys.argv)
