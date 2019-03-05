@@ -183,11 +183,12 @@ For the second q function:
 
 For the third q function:
 \begin{itemize}
-    \item 
-    \item
-    \item
+    \item 10000 samples: Mean of 0.8, variance of 1.4377e-32.
+    \item 1000 samples: Mean of 0.8, variance of 3.773e-32
+    \item 10 samples: Mean of 0.8, variance of 1.479e-32
 \end{itemize}
 
+The proposal distribution with the lowest variance is the third - as it is a constant multiple (and so the same pdf) of f(x)*p(x) the importance ratios are going to match it very well. The slowest convergence is from the normal distribution around 3, because most of the samples it comes up with have 0 probability under the true distribution.
 \end{solution}
 % 2 + 2 + 7 = 11
 \section*{Question 3 \textbf{[4+4+7=15 pts]}}
@@ -317,6 +318,11 @@ As expected since the Cartpole environment is very easy to solve, the cartpole p
 Single DQN had trouble solving mountain car without significant noise in the performance graph. Double DQN had a much more stable performance with a higher end score.  This may be due to having a more stable target to train towards.
 \includegraphics[scale=0.5]{Completed_Graphs/mountaincar_single_Q.png}\\
 \includegraphics[scale=0.37]{Completed_Graphs/Double_DQN_performance_mountaincar.png}
+
+The loss for Cartpole steadily increased. We hypothesize this is due to more stability, as the q-values of a cartpole state and an action given a perfect policy is not dependent on the state and action itself, but rather on the number of timesteps left until the environment returns done. For the double network, it reached perfect ignorance quickly, though unfortunately making a mistake and achieving too high loss at the end. 
+
+\includegraphics[scale=0.5]{Completed_Graphs/Cartpole_Single_Loss.png}\\
+\includegraphics[scale=0.5]{Completed_Graphs/Cartpole_Double_Loss.png}\\
 
 \section{1c and 2c}
 Two step lookahead performs worse for the single DQN cartpole, with more noise in performance.This may be due to the fact that Q networks are susceptible to overestimating the value of states that are not often visited, and two step lookahead allows for taking actions that would never be taken under a greedy policy.
