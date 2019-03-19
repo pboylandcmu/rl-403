@@ -21,11 +21,12 @@ class Reinforce(object):
         # TODO: Define any training operations and optimizers here, initialize
         #       your variables, or alternately compile your model here.  
 
-    def train(self, env, gamma=1.0,render=False):
+    def train(self, env, gamma=1.0,render=False,baseline=0):
         # Trains the model on a single episode using REINFORCE.
         # TODO: Implement this method. It may be helpful to call the class
         #       method generate_episode() to generate training data.
         states,actions,rewards = self.generate_episode(env,render=render)
+        rewards = np.add(rewards,baseline)
         rewards = np.multiply(rewards,1/100)
         last_reward = 0
         T = len(states)
@@ -39,7 +40,8 @@ class Reinforce(object):
             v = np.zeros(self.action_size)
             v[actions[t]] = reward/T
             yTrue[t] = v
-        self.model.fit(x = np.array(states), y=np.array(yTrue),verbose=0)
+        self.model.train_on_batch(x = np.array(states), y=np.array(yTrue))
+        return sum(rewards)
 
     def generate_episode(self, env, render=False):
         # Generates an episode by executing the current policy in the given env.
@@ -73,6 +75,7 @@ class Reinforce(object):
     def predict_action(self,state):
         s = [state]
         a = self.model.predict(np.array(s))
+        #print(a[0])
         return np.random.choice(range(self.action_size),p=a[0])
 
 def parse_arguments():
@@ -98,6 +101,10 @@ def parse_arguments():
 
     return parser.parse_args()
 
+def runningAverage(rewards):
+    if len(rewards) < 100:
+        return np.mean(rewards)
+    return np.mean(rewards[-100:])
 
 def main(args):
     # Parse command-line arguments.
@@ -116,9 +123,11 @@ def main(args):
 
     # TODO: Train the model using REINFORCE and plot the learning curve.
     r = Reinforce(model,lr)
+    rewards = [0]
     for i in range(num_episodes):
+
         print("iteration = ",i)
-        r.train(env,render=render)
+        rewards.append(r.train(env,render=render,baseline = -1*np.mean(rewards)))
 
 
 if __name__ == '__main__':
