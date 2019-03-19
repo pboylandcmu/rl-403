@@ -116,7 +116,7 @@ def main(args):
 
     # TODO: Train the model using REINFORCE and plot the learning curve.
     r = Reinforce(model,lr)
-    for i in range(10**5):
+    for i in range(num_episodes):
         print("iteration = ",i)
         r.train(env,render=render)
 
