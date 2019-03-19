@@ -430,11 +430,11 @@ class DQN_Agent():
 			print("q_e not called correctly")
 			exit(0)
 		
-		for i in range(1,4):
+		for i in range(0,1):
 			print(i*model_count/3)
-			file_name = dir + os.sep + file_base + str(i*model_count/3-1) + '.h5'
+			file_name = dir + os.sep + file_base + str(1) + '.h5'
 			if(self.q_flag == 2):
-				file_name_2 = dir + os.sep + file_base_2 + str(i*model_count/3-1) + '.h5'
+				file_name_2 = dir + os.sep + file_base_2 + str(1) + '.h5'
 			else:
 				file_name_2 = None
 
@@ -543,7 +543,7 @@ def main(args):
 		if(q_c):
 			dqn.q_c('v1ld35','saved_model')
 		if(q_d):
-			dqn.q_d('v1ld35','saved_model','Videos/',model_count=66,file_base_2=None) #Run code for question B single DQN 
+			dqn.q_d('v1ld35','saved_model','ZeroVideos/',model_count=66,file_base_2=None) #Run code for question B single DQN 
 		if(q_e):
 			dqn.q_e('models','saved_model')
 		if (q_f):
@@ -559,7 +559,7 @@ def main(args):
 		if(q_c):
 			dqn.q_c('v2l70d35','m1',file_base_2='m2')
 		if(q_d):
-			dqn.q_d('v2l70d35','m1','Videos/',model_count=66,file_base_2='m2') #Run code for question B single DQN 
+			dqn.q_d('v2l70d35','m1','ZeroVideos/',model_count=66,file_base_2='m2') #Run code for question B single DQN 
 		if(q_e):
 			dqn.q_e('models-double','m1',file_base_2='m2',model_count = 66)
 		if (q_f):
