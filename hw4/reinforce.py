@@ -15,8 +15,8 @@ class Reinforce(object):
 
     def __init__(self, model, lr):
         self.model = model
-        model.compile(optimizer=keras.optimizers.Adam(lr=lr),
-              loss=self.customLoss)
+        self.model.compile(optimizer=keras.optimizers.Adam(lr=lr),loss=self.customLoss)
+        self.action_size = 4
         #self.AdamOpt = tf.train.AdamOptimizer(learning_rate = lr)
         # TODO: Define any training operations and optimizers here, initialize
         #       your variables, or alternately compile your model here.  
@@ -29,15 +29,17 @@ class Reinforce(object):
         rewards = np.multiply(rewards,1/100)
         last_reward = 0
         T = len(states)
-        G_t = np.zeros(T).tolist()
-        #predicted = np.zeros(T).tolist()
+        #G_t = np.zeros(T).tolist()
+        yTrue = np.zeros(T).tolist()
         for t in reversed(list(range(T))):
             reward = rewards[t] + last_reward*gamma
             last_reward = reward
             #predicted[t] = tf.math.scalar_mul(reward/T, K.log(actions[t]))
-            G_t[t] = reward/T
-        #print(actions)
-        self.model.fit(x = np.array(states), y=np.array(G_t),verbose=0)
+            #G_t[t] = reward/T
+            v = np.zeros(self.action_size)
+            v[actions[t]] = reward/T
+            yTrue[t] = v
+        self.model.fit(x = np.array(states), y=np.array(yTrue),verbose=0)
 
     def generate_episode(self, env, render=False):
         # Generates an episode by executing the current policy in the given env.
@@ -61,24 +63,17 @@ class Reinforce(object):
             rewards.append(reward)
         rewards = np.array(rewards,dtype='float')
         print(np.sum(rewards))
-        if(np.sum(rewards) > 150): exit(0)
+        if(np.sum(rewards) > 100): exit(0)
         return states, actions, rewards
 
     @staticmethod
     def customLoss(yTrue,yPred):
-        #L = 0
-        G_t = yTrue
-        print(G_t, yPred)
-        #return K.sum(K.prod(G_t,K.log(yPred)),keepdims=True)
-        return K.sum(yPred)
-        '''for i in range(len(yTrue)):
-            L += tf.math.scalar_mul(yTrue[i], K.log(yPred[i]))
-        return L'''
+        return K.sum(K.sum(yTrue*K.log(yPred)))
 
     def predict_action(self,state):
         s = [state]
         a = self.model.predict(np.array(s))
-        return np.random.choice(len(a),a)
+        return np.random.choice(range(self.action_size),p=a[0])
 
 def parse_arguments():
     # Command-line flags are defined here.
