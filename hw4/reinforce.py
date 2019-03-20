@@ -29,7 +29,7 @@ class Reinforce(object):
         # TODO: Implement this method. It may be helpful to call the class
         #       method generate_episode() to generate training data.
         states,actions,rewards = self.generate_episode(render=render)
-        rewards = np.multiply(rewards,1/100)
+        rewards = np.multiply(rewards,1.0/100)
         last_reward = baseline
         T = len(states)
         G_t = np.zeros(T).tolist()
@@ -37,11 +37,12 @@ class Reinforce(object):
         for t in reversed(list(range(T))):
             reward = rewards[t] + last_reward*gamma
             last_reward = reward
-            G_t[t] = reward/T
+            G_t[t] = reward/float(T)
             v = np.zeros(self.action_size)
             v[actions[t]] = reward/T
             yTrue[t] = v
         self.model.train_on_batch(x = np.array(states), y=np.array(yTrue))
+        #print(G_t)
         return np.mean(G_t)
 
     def generate_episode(self, render=False):
@@ -159,14 +160,14 @@ def main(args):
     if(not test):
         if(train_from):
             r.load_model(model_file,train_from)
-        rewards = np.zeros(100).tolist()
+        rewards = []
         baseline = 0
         for i in range(train_from*100,num_episodes):
             print("iteration = ",i, ", baseline = ", baseline)
             rewards.append(r.train(render=render,baseline = baseline))
             if(i % 100 == 0):
                 r.save_model()
-                baseline = -1*np.mean(rewards[-100:])
+            baseline = runningAverage(rewards)
     else:
         r.load_model(model_file,test)
         print(r.test(verbosity = verbose,render=render))
