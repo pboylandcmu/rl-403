@@ -30,7 +30,7 @@ class Reinforce(object):
         # TODO: Implement this method. It may be helpful to call the class
         #       method generate_episode() to generate training data.
         states,actions,rewards = self.generate_episode(render=render)
-        rewards = np.multiply(rewards,1/100)
+        rewards = np.multiply(rewards,1.0/100)
         last_reward = baseline
         T = len(states)
         G_t = np.zeros(T).tolist()
@@ -38,12 +38,12 @@ class Reinforce(object):
         for t in reversed(list(range(T))):
             reward = rewards[t] + last_reward*gamma
             last_reward = reward
-            #predicted[t] = tf.math.scalar_mul(reward/T, K.log(actions[t]))
-            G_t[t] = reward/T
+            G_t[t] = reward/float(T)
             v = np.zeros(self.action_size)
             v[actions[t]] = reward/T
             yTrue[t] = v
         self.model.train_on_batch(x = np.array(states), y=np.array(yTrue))
+        #print(G_t)
         return np.mean(G_t)
 
     def generate_episode(self, render=False):
@@ -73,7 +73,7 @@ class Reinforce(object):
 
     @staticmethod
     def customLoss(yTrue,yPred):
-        return K.sum(K.sum(tf.multiply(yTrue,K.log(yPred))))
+        return -K.sum(K.sum(tf.multiply(yTrue,K.log(yPred)))) + 2
 
     def predict_action(self,state):
         s = [state]
@@ -162,14 +162,14 @@ def main(args):
     # TODO: Train the model using REINFORCE and plot the learning curve.
     r = Reinforce(model,lr,model_file,env)
     if(not test):
-        rewards = np.zeros(100).tolist()
+        rewards = []
         baseline = 0
         for i in range(num_episodes):
             print("iteration = ",i, ", baseline = ", baseline)
             rewards.append(r.train(render=render,baseline = baseline))
             if(i % 100 == 0):
                 r.save_model()
-                baseline = -1*np.mean(rewards[-100:])
+            baseline = runningAverage(rewards)
     else:
         r.load_model(model_file,test)
         print(r.test(verbosity = verbose,render=render))
