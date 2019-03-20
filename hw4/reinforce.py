@@ -16,11 +16,11 @@ from time import time
 class Reinforce(object):
     # Implementation of the policy gradient method REINFORCE.
 
-    def __init__(self, model, lr, model_file, env):
+    def __init__(self, model, lr, model_file, env, train_from):
         self.model = model
         self.model.compile(optimizer=keras.optimizers.Adam(lr=lr),loss=self.customLoss)
         self.action_size = 4
-        self.file_count = 0
+        self.file_count = train_from
         self.model_file = model_file
         self.env = env
         # TODO: Define any training operations and optimizers here, initialize
@@ -168,13 +168,13 @@ def main(args):
         model = keras.models.model_from_json(f.read())
 
     # TODO: Train the model using REINFORCE and plot the learning curve.
-    r = Reinforce(model,lr,model_file,env)
+    r = Reinforce(model,lr,model_file,env,train_from)
     if(not test):
         if(train_from):
             r.load_model(model_file,train_from)
         rewards = []
         baseline = 0
-        for i in range(num_episodes):
+        for i in range(train_from*100,num_episodes):
             print("iteration = ",i, ", baseline = ", baseline)
             rewards.append(r.train(render=render,baseline = baseline))
             if(i % 100 == 0):
