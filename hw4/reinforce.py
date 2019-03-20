@@ -21,7 +21,6 @@ class Reinforce(object):
         self.file_count = 0
         self.model_file = model_file
         self.env = env
-        #self.AdamOpt = tf.train.AdamOptimizer(learning_rate = lr)
         # TODO: Define any training operations and optimizers here, initialize
         #       your variables, or alternately compile your model here.  
 
@@ -38,7 +37,6 @@ class Reinforce(object):
         for t in reversed(list(range(T))):
             reward = rewards[t] + last_reward*gamma
             last_reward = reward
-            #predicted[t] = tf.math.scalar_mul(reward/T, K.log(actions[t]))
             G_t[t] = reward/T
             v = np.zeros(self.action_size)
             v[actions[t]] = reward/T
@@ -68,18 +66,15 @@ class Reinforce(object):
             rewards.append(reward)
         rewards = np.array(rewards,dtype='float')
         print(np.sum(rewards))
-        if(np.sum(rewards) > 100): exit(0)
         return states, actions, rewards
 
     @staticmethod
     def customLoss(yTrue,yPred):
-        return K.sum(K.sum(tf.multiply(yTrue,K.log(yPred))))
+        return -K.sum(K.sum(tf.multiply(yTrue,K.log(yPred))))
 
     def predict_action(self,state):
         s = [state]
         a = self.model.predict(np.array(s))
-        if(1-np.amax(a[0]) < .01): exit(0)
-        #print(a[0])
         return np.random.choice(range(self.action_size),p=a[0])
 
     def predict_action_verbose(self,states):
@@ -118,7 +113,6 @@ def parse_arguments():
     parser.add_argument('--lr', dest='lr', type=float,
                         default=5e-4, help="The learning rate.")
 
-    # https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
     parser_group = parser.add_mutually_exclusive_group(required=False)
     parser_group.add_argument('--render', dest='render',
                               action='store_true',
@@ -132,7 +126,6 @@ def parse_arguments():
 
     parser.add_argument('--model',dest='model_file',type=str,default = 'models/model')
     parser.add_argument('--test',dest='test',type=int,default = 0)
-    #parser.set_defaults(verbose=False)
 
     return parser.parse_args()
 
