@@ -126,6 +126,7 @@ def parse_arguments():
 
     parser.add_argument('--model',dest='model_file',type=str,default = 'models/model')
     parser.add_argument('--test',dest='test',type=int,default = 0)
+    parser.add_argument('--train_from',dest='train_from',type=int,default = 0)
 
     return parser.parse_args()
 
@@ -144,6 +145,7 @@ def main(args):
     model_file = args.model_file
     test = args.test
     verbose = args.verbose
+    train_from = args.train_from
 
     # Create the environment.
     env = gym.make('LunarLander-v2')
@@ -155,6 +157,8 @@ def main(args):
     # TODO: Train the model using REINFORCE and plot the learning curve.
     r = Reinforce(model,lr,model_file,env)
     if(not test):
+        if(train_from):
+            r.load_model(model_file,test)
         rewards = np.zeros(100).tolist()
         baseline = 0
         for i in range(num_episodes):
