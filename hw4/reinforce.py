@@ -4,6 +4,7 @@ import numpy as np
 import tensorflow as tf
 import keras
 import keras.backend as K
+from keras.models import load_model
 import gym
 import matplotlib
 matplotlib.use('Agg')
@@ -13,19 +14,22 @@ import matplotlib.pyplot as plt
 class Reinforce(object):
     # Implementation of the policy gradient method REINFORCE.
 
-    def __init__(self, model, lr):
+    def __init__(self, model, lr, model_file, env):
         self.model = model
         self.model.compile(optimizer=keras.optimizers.Adam(lr=lr),loss=self.customLoss)
         self.action_size = 4
+        self.file_count = 0
+        self.model_file = model_file
+        self.env = env
         #self.AdamOpt = tf.train.AdamOptimizer(learning_rate = lr)
         # TODO: Define any training operations and optimizers here, initialize
         #       your variables, or alternately compile your model here.  
 
-    def train(self, env, gamma=1.0,render=False,baseline=0):
+    def train(self, gamma=1.0,render=False,baseline=0):
         # Trains the model on a single episode using REINFORCE.
         # TODO: Implement this method. It may be helpful to call the class
         #       method generate_episode() to generate training data.
-        states,actions,rewards = self.generate_episode(env,render=render)
+        states,actions,rewards = self.generate_episode(render=render)
         rewards = np.add(rewards,baseline)
         rewards = np.multiply(rewards,1/100)
         last_reward = 0
@@ -43,7 +47,7 @@ class Reinforce(object):
         self.model.train_on_batch(x = np.array(states), y=np.array(yTrue))
         return sum(rewards)
 
-    def generate_episode(self, env, render=False):
+    def generate_episode(self, render=False):
         # Generates an episode by executing the current policy in the given env.
         # Returns:
         # - a list of states, indexed by time step
@@ -53,15 +57,15 @@ class Reinforce(object):
         states = []
         actions = []
         rewards = []
-        state = env.reset()
+        state = self.env.reset()
         done = False
         while not done:
             if(render):
-                env.render()
+                self.env.render()
             states.append(state)
             action = self.predict_action(state)
             actions.append(action)
-            state,reward,done,_ = env.step(action)
+            state,reward,done,_ = self.env.step(action)
             rewards.append(reward)
         rewards = np.array(rewards,dtype='float')
         print(np.sum(rewards))
@@ -77,6 +81,31 @@ class Reinforce(object):
         a = self.model.predict(np.array(s))
         #print(a[0])
         return np.random.choice(range(self.action_size),p=a[0])
+
+    def predict_action_verbose(self,states):
+        a = self.model.predict(np.array(states))
+        print(a)
+
+    def save_model(self,model_file=None):
+        if(model_file is None):
+            name = self.model_file + str(self.file_count) + ".h5"
+        else:
+            name = model_file + str(self.file_count) + ".h5"
+        self.file_count += 1
+        self.model.save_weights(name)
+        return name
+
+    def load_model(self,model_file,file_no):
+        self.model.load_weights(model_file + str(file_no) + ".h5")
+
+    def test(self,episodes=1,verbosity = 1,render = False):
+        rewards = []
+        for e in range(episodes):
+            states, actions, reward = self.generate_episode(render=render)
+            rewards.append(np.sum(reward))
+            if(e == 0 and verbosity == 1):
+                self.predict_action_verbose(states)
+        return np.mean(rewards), np.std(rewards)
 
 def parse_arguments():
     # Command-line flags are defined here.
@@ -97,7 +126,13 @@ def parse_arguments():
     parser_group.add_argument('--no-render', dest='render',
                               action='store_false',
                               help="Whether to render the environment.")
-    parser.set_defaults(render=False)
+    parser.add_argument('--verbose', dest='verbose',
+                              action='store_true')
+    parser.set_defaults(render=False,verbose=False)
+
+    parser.add_argument('--model',dest='model_file',type=str,default = 'models/model')
+    parser.add_argument('--test',dest='test',type=int,default = 0)
+    #parser.set_defaults(verbose=False)
 
     return parser.parse_args()
 
@@ -113,6 +148,9 @@ def main(args):
     num_episodes = args.num_episodes
     lr = args.lr
     render = args.render
+    model_file = args.model_file
+    test = args.test
+    verbose = args.verbose
 
     # Create the environment.
     env = gym.make('LunarLander-v2')
@@ -122,12 +160,17 @@ def main(args):
         model = keras.models.model_from_json(f.read())
 
     # TODO: Train the model using REINFORCE and plot the learning curve.
-    r = Reinforce(model,lr)
-    rewards = [0]
-    for i in range(num_episodes):
-
-        print("iteration = ",i)
-        rewards.append(r.train(env,render=render,baseline = -1*np.mean(rewards)))
+    r = Reinforce(model,lr,model_file,env)
+    if(not test):
+        rewards = [0]
+        for i in range(num_episodes):
+            print("iteration = ",i)
+            rewards.append(r.train(render=render,baseline = -1*np.mean(rewards)))
+            if(i % 100 == 0):
+                r.save_model()
+    else:
+        r.load_model(model_file,test)
+        print(r.test(verbosity = verbose,render=render))
 
 
 if __name__ == '__main__':
