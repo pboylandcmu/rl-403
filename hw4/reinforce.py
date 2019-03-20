@@ -30,9 +30,8 @@ class Reinforce(object):
         # TODO: Implement this method. It may be helpful to call the class
         #       method generate_episode() to generate training data.
         states,actions,rewards = self.generate_episode(render=render)
-        rewards = np.add(rewards,baseline)
         rewards = np.multiply(rewards,1/100)
-        last_reward = 0
+        last_reward = baseline
         T = len(states)
         #G_t = np.zeros(T).tolist()
         yTrue = np.zeros(T).tolist()
@@ -74,7 +73,7 @@ class Reinforce(object):
 
     @staticmethod
     def customLoss(yTrue,yPred):
-        return K.sum(K.sum(yTrue*K.log(yPred)))
+        return K.sum(K.sum(tf.multiply(yTrue,K.log(yPred))))
 
     def predict_action(self,state):
         s = [state]
