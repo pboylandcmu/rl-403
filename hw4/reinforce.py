@@ -30,11 +30,8 @@ class Reinforce(object):
         # Trains the model on a single episode using REINFORCE.
         # TODO: Implement this method. It may be helpful to call the class
         #       method generate_episode() to generate training data.
-        before_gen = time()
         states,actions,rewards = self.generate_episode(render=render)
-        gentime = time()-before_gen
 
-        before_loop = time()
         rewards = np.multiply(rewards,1.0/100)
         last_reward = baseline
         T = len(states)
@@ -47,13 +44,9 @@ class Reinforce(object):
             v = np.zeros(self.action_size)
             v[actions[t]] = reward/float(T)
             yTrue[t] = v
-        looptime = time()-before_loop
 
-        before_train = time()
         self.model.train_on_batch(x = np.array(states), y=np.array(yTrue))
-        traintime = time()-before_train
 
-        print(str(gentime) + " " + str(looptime) + " " + str(traintime))
         #print(G_t)
         return np.mean(G_t)
 
@@ -179,7 +172,7 @@ def main(args):
             rewards.append(r.train(render=render,baseline = baseline))
             if(i % 100 == 0):
                 r.save_model()
-            baseline = -1*runningAverage(rewards)
+                baseline = -1*runningAverage(rewards)
     else:
         r.load_model(model_file,test)
         print(r.test(verbosity = verbose,render=render))
