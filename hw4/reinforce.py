@@ -31,24 +31,22 @@ class Reinforce(object):
         # TODO: Implement this method. It may be helpful to call the class
         #       method generate_episode() to generate training data.
         states,actions,rewards = self.generate_episode(render=render)
-
-        rewards = np.multiply(rewards,1.0/100)
-        last_reward = baseline
         T = len(states)
+        rewards = np.multiply(rewards,1.0/(100*T))
+        last_reward = 0
         G_t = [0] * T
         yTrue = [0] * T
         for t in reversed(list(range(T))):
             reward = rewards[t] + last_reward*gamma
             last_reward = reward
-            G_t[t] = reward/float(T)
+            G_t[t] = reward
             v = np.zeros(self.action_size)
-            v[actions[t]] = reward/float(T)
+            v[actions[t]] = reward
             yTrue[t] = v
-
+        baseline_temp = np.mean(G_t)*T
+        np.add(G_t,baseline/T)
         self.model.train_on_batch(x = np.array(states), y=np.array(yTrue))
-
-        #print(G_t)
-        return np.mean(G_t)
+        return baseline_temp
 
     def generate_episode(self, render=False):
         # Generates an episode by executing the current policy in the given env.
@@ -81,11 +79,13 @@ class Reinforce(object):
     def predict_action(self,state):
         s = [state]
         a = self.model.predict(np.array(s))
+        #return np.argmax(a[0])
         return np.random.choice(range(self.action_size),p=a[0])
 
     def predict_action_verbose(self,states):
         a = self.model.predict(np.array(states))
-        print(a)
+        for r in a:
+            print(r)
 
     def save_model(self,model_file=None):
         if(model_file is None):
@@ -130,7 +130,7 @@ def parse_arguments():
                               action='store_true')
     parser.set_defaults(render=False,verbose=False)
 
-    parser.add_argument('--model',dest='model_file',type=str,default = 'models/model')
+    parser.add_argument('--model_file',dest='model_file',type=str,default = 'models/model')
     parser.add_argument('--test',dest='test',type=int,default = 0)
     parser.add_argument('--train_from',dest='train_from',type=int,default = 0)
 
