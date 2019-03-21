@@ -41,9 +41,8 @@ class Reinforce(object):
             last_reward = reward
             G_t[t] = reward
             v = np.zeros(self.action_size)
-            v[actions[t]] = reward
+            v[actions[t]] = reward + baseline/T
             yTrue[t] = v
-        np.add(G_t,baseline/T)
         self.model.train_on_batch(x = np.array(states), y=np.array(yTrue))
         return np.mean(G_t)*T
 
