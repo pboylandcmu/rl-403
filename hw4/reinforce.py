@@ -43,10 +43,9 @@ class Reinforce(object):
             v = np.zeros(self.action_size)
             v[actions[t]] = reward
             yTrue[t] = v
-        baseline_temp = np.mean(G_t)*T
         np.add(G_t,baseline/T)
         self.model.train_on_batch(x = np.array(states), y=np.array(yTrue))
-        return baseline_temp
+        return np.mean(G_t)*T
 
     def generate_episode(self, render=False):
         # Generates an episode by executing the current policy in the given env.
