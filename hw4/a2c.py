@@ -3,10 +3,13 @@ import argparse
 import numpy as np
 import tensorflow as tf
 import keras
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.models import load_model
 import gym
 
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from reinforce import Reinforce
@@ -38,6 +41,60 @@ class A2C(Reinforce):
         #       method generate_episode() to generate training data.
         return
 
+    def generate_episode(self, render=False):
+        # Generates an episode by executing the current policy in the given env.
+        # Returns:
+        # - a list of states, indexed by time step
+        # - a list of actions, indexed by time step
+        # - a list of rewards, indexed by time step
+        # TODO: Implement this method.
+        states = []
+        actions = []
+        rewards = []
+        state = self.env.reset()
+        done = False
+        while not done:
+            if(render):
+                self.env.render()
+            states.append(state)
+            action = self.predict_action(state)
+            actions.append(action)
+            state,reward,done,_ = self.env.step(action)
+            rewards.append(reward)
+        rewards = np.array(rewards,dtype='float')
+        #print("total reward = ",np.sum(rewards),", ep length = ",len(rewards))
+        #print(rewards)
+        return states, actions, rewards
+
+    def predict_action(self,state):
+        s = [state]
+        a = self.model.predict(np.array(s))
+        #return np.argmax(a[0])
+        return np.random.choice(range(self.action_size),p=a[0])
+
+    @staticmethod
+    def customLoss(yTrue,yPred):
+        return -K.sum(K.sum(tf.multiply(yTrue,K.log(yPred))))
+
+    def save_model(self,model_file=None):
+        if(model_file is None):
+            name = self.model_file + str(self.file_count) + ".h5"
+        else:
+            name = model_file + str(self.file_count) + ".h5"
+        self.file_count += 1
+        self.model.save_weights(name)
+        return name
+
+    def load_model(self,model_file,file_no):
+        self.model.load_weights(model_file + str(file_no) + ".h5")
+
+    def test(self,episodes=100,verbosity = 0,render = False):
+        rewards = []
+        for e in range(episodes):
+            states, actions, reward = self.generate_episode(render=render)
+            rewards.append(np.sum(reward))
+        return np.mean(rewards), np.std(rewards)
+
 
 def parse_arguments():
     # Command-line flags are defined here.
@@ -66,6 +123,15 @@ def parse_arguments():
 
     return parser.parse_args()
 
+def make_critic():
+    model = Sequential()
+    model.add(Dense(16, input_dim=4, activation='relu'))
+    model.add(Dense(16, activation='relu'))
+    model.add(Dense(16, activation='relu'))
+    model.add(Dense(1, activation='linear'))
+    model.compile(optimizer=keras.optimizers.Adam(lr=self.learning_rate),
+            loss='MSE')
+    return model
 
 def main(args):
     # Parse command-line arguments.
