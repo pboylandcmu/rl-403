@@ -42,11 +42,32 @@ class A2C(object):
         # TODO: Define any training operations and optimizers here, initialize
         #       your variables, or alternately compile your model here.  
 
-    def train(self, env, gamma=1.0):
+    def r2R(rewards, n):
+        kern = np.ones(n)
+        convd = np.convolve(rewards[::-1],kern,'full')[:len(rewards)]
+        return convd
+
+    def getReward(states,t):
+        if (t > len(states)):
+            return 0
+        else:
+            return PLACEHOLDER(states[t])
+
+    def train(self, gamma=1.0):
         # Trains the model on a single episode using A2C.
         # TODO: Implement this method. It may be helpful to call the class
         #       method generate_episode() to generate training data.
-        return
+        states,actions,rewards = self.generate_episode(render=render)
+        T = len(states)
+        rewards = np.multiply(rewards,1.0/(100))
+        last_reward = 0
+        yTrue = [0] * T
+        convRewards = reversed(r2R(rewards,self.n))
+        for t in reversed(list(range(T))):
+            v = np.zeros(self.action_size)
+            v[actions[t]] = convRewards[t] + getReward(states,t+self.n) - getRewards(states,t)
+            yTrue[t] = v
+        self.model.train_on_batch(x = np.array(states), y=np.array(yTrue))
 
     def generate_episode(self, render=False):
         # Generates an episode by executing the current policy in the given env.

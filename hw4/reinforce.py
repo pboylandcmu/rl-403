@@ -196,7 +196,7 @@ def main(args):
         baseline = 0
         for i in range(train_from*100,num_episodes+1):
             print("iteration = ",i, ", baseline = ", baseline)
-            rewards.append(r.train(render=render,baseline = baseline))
+            rewards.append(r.train(render=render,baseline = 0))
             if(i % 100 == 0):
                 r.save_model()
                 baseline = runningAverage(rewards)
