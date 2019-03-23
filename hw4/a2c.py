@@ -16,12 +16,12 @@ import matplotlib.pyplot as plt
 from reinforce import Reinforce
 
 
-class A2C(Reinforce):
+class A2C(object):
     # Implementation of N-step Advantage Actor Critic.
     # This class inherits the Reinforce class, so for example, you can reuse
     # generate_episode() here.
 
-    def __init__(self, model, lr, critic_model, critic_lr, n=20):
+    def __init__(self, model, lr, critic_model, critic_lr,actor_file,critic_file, n=20):
         # Initializes A2C.
         # Args:
         # - model: The actor model.
@@ -32,6 +32,10 @@ class A2C(Reinforce):
         self.model = model
         self.critic_model = critic_model
         self.n = n
+        self.actor_file_count = 0
+        self.critic_file_count = 0
+        self.actor_model_file = actor_file
+        self.critic_model_file = critic_file
 
         # TODO: Define any training operations and optimizers here, initialize
         #       your variables, or alternately compile your model here.  
@@ -83,17 +87,33 @@ class A2C(Reinforce):
     def customLoss(yTrue,yPred):
         return -K.sum(K.sum(tf.multiply(yTrue,K.log(yPred))))
 
-    def save_model(self,model_file=None):
+    def save_models(self):
+        self.save_actor_model()
+        self.save_critic_model()
+
+    def save_actor_model(self,model_file=None):
         if(model_file is None):
-            name = self.model_file + str(self.file_count) + ".h5"
+            name = self.actor_model_file + str(self.file_count) + ".h5"
         else:
             name = model_file + str(self.file_count) + ".h5"
-        self.file_count += 1
+        self.actor_file_count += 1
         self.model.save_weights(name)
         return name
 
-    def load_model(self,model_file,file_no):
+    def load_actor_model(self,model_file,file_no):
         self.model.load_weights(model_file + str(file_no) + ".h5")
+
+    def save_critic_model(self,model_file=None):
+        if(model_file is None):
+            name = self.critic_model_file + str(self.file_count) + ".h5"
+        else:
+            name = model_file + str(self.file_count) + ".h5"
+        self.critic_file_count += 1
+        self.critic_model.save_weights(name)
+        return name
+
+    def load_critic_model(self,model_file,file_no):
+        self.critic_model.load_weights(model_file + str(file_no) + ".h5")
 
     def test(self,episodes=100,verbosity = 0,render = False):
         rewards = []
@@ -128,15 +148,23 @@ def parse_arguments():
                               help="Whether to render the environment.")
     parser.set_defaults(render=False)
 
+    parser.add_argument('--actor_file',dest='actor_file',type=str,default = 'actor_models/model')
+    parser.add_argument('--critic_file',dest='critic_file',type=str,default = 'critic_models/model')
+    parser.add_argument('--test',dest='test',type=int,default = 0)
+    parser.add_argument('--graph',dest='graph',type=int,default = 0)
+    parser.add_argument('--step',dest='step',type=int,default = 5)
+    parser.add_argument('--train_from',dest='train_from',type=int,default = 0)
+    parser.add_argument('--graph',dest='graph',type=int,default = 0)
+
     return parser.parse_args()
 
-def make_critic():
+def make_critic(lr):
     model = Sequential()
     model.add(Dense(16, input_dim=4, activation='relu'))
     model.add(Dense(16, activation='relu'))
     model.add(Dense(16, activation='relu'))
     model.add(Dense(1, activation='linear'))
-    model.compile(optimizer=keras.optimizers.Adam(lr=self.learning_rate),
+    model.compile(optimizer=keras.optimizers.Adam(lr=learning_rate),
             loss='MSE')
     return model
 
@@ -149,15 +177,38 @@ def main(args):
     critic_lr = args.critic_lr
     n = args.n
     render = args.render
+    actor_file = args.actor_file
+    critic_file = args.critic_file
+    test = args.test
+    verbose = args.verbose
+    train_from = args.train_from
+    graph = args.graph
 
     # Create the environment.
     env = gym.make('LunarLander-v2')
+    critic = make_critic(critic_lr)
     
     # Load the actor model from file.
     with open(model_config_path, 'r') as f:
         model = keras.models.model_from_json(f.read())
 
     # TODO: Train the model using A2C and plot the learning curves.
+    a2c = A2C(model,lr,critic,critic_lr,actor_file,critic_file,n=n)
+    if(not test and not graph):
+        if(train_from):
+            a2c.load_actor_model(actor_file,train_from)
+            a2c.load_critic_model(critic_file,train_from)
+            for i in range(train_from*100,num_episodes+1):
+                print("iteration = ",i)
+                a2c.train(render=render)
+                if(i % 100 == 0):
+                    a2c.save_models()
+    elif graph():
+        pass
+    elif(test):
+        a2c.load_actor_model(actor_file,test)
+        a2c.load_critic_model(critic_file,test)
+        print(a2c.test(verbosity = verbose,render = render))
 
 
 if __name__ == '__main__':
