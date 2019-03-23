@@ -104,7 +104,7 @@ class A2C(object):
         s = [state]
         a = self.critic_model.predict(np.array(s))
         #return np.argmax(a[0])
-        return a[0]
+        return a[0][0]
 
     @staticmethod
     def customLoss(yTrue,yPred):
