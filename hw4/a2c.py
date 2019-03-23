@@ -42,6 +42,7 @@ class A2C(object):
         # TODO: Define any training operations and optimizers here, initialize
         #       your variables, or alternately compile your model here.  
 
+    @staticmethod
     def r2R(rewards, n):
         kern = np.ones(n)
         convd = np.convolve(rewards[::-1],kern,'full')[:len(rewards)]
