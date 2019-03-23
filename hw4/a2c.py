@@ -38,6 +38,7 @@ class A2C(object):
         self.critic_model_file = critic_file
         self.env = env
         self.action_size = 4
+        self.model.compile(optimizer=keras.optimizers.Adam(lr=lr),loss=self.customLoss)
 
         # TODO: Define any training operations and optimizers here, initialize
         #       your variables, or alternately compile your model here.  
@@ -49,7 +50,7 @@ class A2C(object):
         return convd
 
     def getReward(self,states,t):
-        if (t > len(states)):
+        if (t >= len(states)):
             return 0
         else:
             return self.predict_value(states[t])
@@ -59,13 +60,14 @@ class A2C(object):
         # TODO: Implement this method. It may be helpful to call the class
         #       method generate_episode() to generate training data.
         states,actions,rewards = self.generate_episode(render=render)
+        n = self.n+1
         T = len(states)
         rewards = np.multiply(rewards,1.0/(100))
         yTrue = [0] * T
-        convRewards = list(reversed(A2C.r2R(rewards,self.n)))
+        convRewards = list(reversed(A2C.r2R(rewards,n)))
         for t in reversed(list(range(T))):
             v = np.zeros(self.action_size)
-            v[actions[t]] = convRewards[t] + self.getReward(states,t+self.n) - self.getReward(states,t)
+            v[actions[t]] = convRewards[t] + self.getReward(states,t+n) - self.getReward(states,t)
             yTrue[t] = v
         self.model.train_on_batch(x = np.array(states), y=np.array(yTrue))
         self.critic_model.train_on_batch(x = np.array(states), y=convRewards)
@@ -91,7 +93,7 @@ class A2C(object):
             state,reward,done,_ = self.env.step(action)
             rewards.append(reward)
         rewards = np.array(rewards,dtype='float')
-        #print("total reward = ",np.sum(rewards),", ep length = ",len(rewards))
+        print("total reward = ",np.sum(rewards),", ep length = ",len(rewards))
         #print(rewards)
         return states, actions, rewards
 
