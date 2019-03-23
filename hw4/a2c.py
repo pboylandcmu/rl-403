@@ -102,9 +102,9 @@ class A2C(object):
 
     def predict_value(self,state):
         s = [state]
-        a = self.model.predict(np.array(s))
+        a = self.critic_model.predict(np.array(s))
         #return np.argmax(a[0])
-        return a[0]
+        return a[0][0]
 
     @staticmethod
     def customLoss(yTrue,yPred):
