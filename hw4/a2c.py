@@ -47,11 +47,11 @@ class A2C(object):
         convd = np.convolve(rewards[::-1],kern,'full')[:len(rewards)]
         return convd
 
-    def getReward(states,t):
+    def getReward(self,states,t):
         if (t > len(states)):
             return 0
         else:
-            return PLACEHOLDER(states[t])
+            return self.predict_value(states[t])
 
     def train(self, gamma=1.0):
         # Trains the model on a single episode using A2C.
@@ -65,7 +65,7 @@ class A2C(object):
         convRewards = reversed(r2R(rewards,self.n))
         for t in reversed(list(range(T))):
             v = np.zeros(self.action_size)
-            v[actions[t]] = convRewards[t] + getReward(states,t+self.n) - getRewards(states,t)
+            v[actions[t]] = convRewards[t] + self.getReward(states,t+self.n) - self.getReward(states,t)
             yTrue[t] = v
         self.model.train_on_batch(x = np.array(states), y=np.array(yTrue))
 
@@ -102,7 +102,7 @@ class A2C(object):
 
     def predict_value(self,state):
         s = [state]
-        a = self.model.predict(np.array(s))
+        a = self.critic_model.predict(np.array(s))
         #return np.argmax(a[0])
         return a[0]
 
