@@ -54,16 +54,15 @@ class A2C(object):
         else:
             return self.predict_value(states[t])
 
-    def train(self, gamma=1.0):
+    def train(self, gamma=1.0,render=False):
         # Trains the model on a single episode using A2C.
         # TODO: Implement this method. It may be helpful to call the class
         #       method generate_episode() to generate training data.
         states,actions,rewards = self.generate_episode(render=render)
         T = len(states)
         rewards = np.multiply(rewards,1.0/(100))
-        last_reward = 0
         yTrue = [0] * T
-        convRewards = reversed(r2R(rewards,self.n))
+        convRewards = list(reversed(A2C.r2R(rewards,self.n)))
         for t in reversed(list(range(T))):
             v = np.zeros(self.action_size)
             v[actions[t]] = convRewards[t] + self.getReward(states,t+self.n) - self.getReward(states,t)
