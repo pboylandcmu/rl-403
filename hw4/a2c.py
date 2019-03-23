@@ -73,6 +73,12 @@ class A2C(Reinforce):
         #return np.argmax(a[0])
         return np.random.choice(range(self.action_size),p=a[0])
 
+    def predict_value(self,state):
+        s = [state]
+        a = self.model.predict(np.array(s))
+        #return np.argmax(a[0])
+        return a[0]
+
     @staticmethod
     def customLoss(yTrue,yPred):
         return -K.sum(K.sum(tf.multiply(yTrue,K.log(yPred))))
