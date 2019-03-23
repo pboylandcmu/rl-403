@@ -32,7 +32,7 @@ class Reinforce(object):
         #       method generate_episode() to generate training data.
         states,actions,rewards = self.generate_episode(render=render)
         T = len(states)
-        rewards = np.multiply(rewards,1.0/(100*T))
+        rewards = np.multiply(rewards,1.0/(100 * T))
         last_reward = 0
         G_t = [0] * T
         yTrue = [0] * T
@@ -41,11 +41,11 @@ class Reinforce(object):
             last_reward = reward
             G_t[t] = reward
             v = np.zeros(self.action_size)
-            v[actions[t]] = reward + baseline/T
+            v[actions[t]] = reward #- baseline / T
             yTrue[t] = v
-        #np.add(G_t,baseline/T)
+
         self.model.train_on_batch(x = np.array(states), y=np.array(yTrue))
-        return np.mean(G_t)*T
+        return np.mean(G_t) * T
 
     def generate_episode(self, render=False):
         # Generates an episode by executing the current policy in the given env.
@@ -111,9 +111,23 @@ class Reinforce(object):
                 self.predict_action_verbose(states)
         return np.mean(rewards), np.std(rewards)
 
-    def plot_reward(self,x,perf,std):
-        plt.errorbar(x, perf, std)
+    def graph(self,graph,step=5):
+        means = []
+        stds = []
+        for i in range(0,graph,step):
+            self.load_model(self.model_file,i)
+            mean, std = self.test(episodes=100,render=False,verbosity=0)
+            means.append(mean)
+            stds.append(std)
+        plt.plot(range(0,graph,step),means)
+        plt.xlabel("model number")
+        plt.ylabel("average reward")
+        plt.title("Lunar Lander REINFORCE Performance plot")
         plt.show()
+
+
+
+
 
 def parse_arguments():
     # Command-line flags are defined here.
@@ -139,6 +153,8 @@ def parse_arguments():
 
     parser.add_argument('--model_file',dest='model_file',type=str,default = 'models/model')
     parser.add_argument('--test',dest='test',type=int,default = 0)
+    parser.add_argument('--graph',dest='graph',type=int,default = 0)
+    parser.add_argument('--step',dest='step',type=int,default = 5)
     parser.add_argument('--train_from',dest='train_from',type=int,default = 0)
     parser.add_argument('--graph',dest='graph',type=int,default = 0)
 
@@ -171,7 +187,9 @@ def main(args):
 
     # TODO: Train the model using REINFORCE and plot the learning curve.
     r = Reinforce(model,lr,model_file,env,train_from)
-    if(not test and not graph):
+    if(graph):
+        r.graph(graph,step=args.step)
+    elif(not test):
         if(train_from):
             r.load_model(model_file,train_from)
         rewards = []
@@ -181,20 +199,7 @@ def main(args):
             rewards.append(r.train(render=render,baseline = baseline))
             if(i % 100 == 0):
                 r.save_model()
-                baseline = -1*runningAverage(rewards)
-    elif(graph):
-        x = []
-        perfs = []
-        stds = []
-        for i in range(0,graph+1,5):
-            model = i*100
-            x.append(model)
-            r.load_model(model_file,i)
-            perf,std = r.test()
-            print(model,perf,std)
-            perfs.append(perf)
-            stds.append(std)
-        r.plot_reward(x,perfs,stds)
+                baseline = runningAverage(rewards)
     else:
         r.load_model(model_file,test)
         print(r.test(verbosity = verbose,render=render))
