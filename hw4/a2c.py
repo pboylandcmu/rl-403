@@ -3,6 +3,7 @@ import argparse
 import numpy as np
 import tensorflow as tf
 import keras
+import keras.backend as K
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.models import load_model
