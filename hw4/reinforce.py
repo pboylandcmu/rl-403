@@ -32,19 +32,20 @@ class Reinforce(object):
         #       method generate_episode() to generate training data.
         states,actions,rewards = self.generate_episode(render=render)
         T = len(states)
-        rewards = np.multiply(rewards,1.0/(100))
+        rewards = np.multiply(rewards,1.0/(100 * T))
         last_reward = 0
         G_t = [0] * T
         yTrue = [0] * T
         for t in reversed(list(range(T))):
-            reward = rewards[t] + last_reward*gamma
+            reward = rewards[t] + last_reward * gamma
             last_reward = reward
             G_t[t] = reward
             v = np.zeros(self.action_size)
-            v[actions[t]] = reward - baseline
+            v[actions[t]] = reward #- baseline / T
             yTrue[t] = v
+
         self.model.train_on_batch(x = np.array(states), y=np.array(yTrue))
-        return np.mean(G_t)
+        return np.mean(G_t) * T
 
     def generate_episode(self, render=False):
         # Generates an episode by executing the current policy in the given env.
@@ -67,7 +68,8 @@ class Reinforce(object):
             state,reward,done,_ = self.env.step(action)
             rewards.append(reward)
         rewards = np.array(rewards,dtype='float')
-        print(np.sum(rewards))
+        #print("total reward = ",np.sum(rewards),", ep length = ",len(rewards))
+        #print(rewards)
         return states, actions, rewards
 
     @staticmethod
@@ -82,8 +84,9 @@ class Reinforce(object):
 
     def predict_action_verbose(self,states):
         a = self.model.predict(np.array(states))
-        for r in a:
-            print(r)
+        print(a)
+        #for r in a:
+        #    print(r)
 
     def save_model(self,model_file=None):
         if(model_file is None):
@@ -97,11 +100,13 @@ class Reinforce(object):
     def load_model(self,model_file,file_no):
         self.model.load_weights(model_file + str(file_no) + ".h5")
 
-    def test(self,episodes=100,verbosity = 1,render = False):
+    def test(self,episodes=100,verbosity = 0,render = False):
         rewards = []
         for e in range(episodes):
             states, actions, reward = self.generate_episode(render=render)
             rewards.append(np.sum(reward))
+            if(verbosity == 1 and len(reward) == 1000):
+                self.predict_action_verbose(states)
             if(e == 0 and verbosity == 1):
                 self.predict_action_verbose(states)
         return np.mean(rewards), np.std(rewards)
@@ -151,6 +156,7 @@ def parse_arguments():
     parser.add_argument('--graph',dest='graph',type=int,default = 0)
     parser.add_argument('--step',dest='step',type=int,default = 5)
     parser.add_argument('--train_from',dest='train_from',type=int,default = 0)
+    parser.add_argument('--graph',dest='graph',type=int,default = 0)
 
     return parser.parse_args()
 
@@ -188,7 +194,7 @@ def main(args):
             r.load_model(model_file,train_from)
         rewards = []
         baseline = 0
-        for i in range(train_from*100,num_episodes):
+        for i in range(train_from*100,num_episodes+1):
             print("iteration = ",i, ", baseline = ", baseline)
             rewards.append(r.train(render=render,baseline = 0))
             if(i % 100 == 0):
@@ -197,6 +203,7 @@ def main(args):
     else:
         r.load_model(model_file,test)
         print(r.test(verbosity = verbose,render=render))
+
 
 
 if __name__ == '__main__':
