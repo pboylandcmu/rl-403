@@ -178,7 +178,6 @@ def parse_arguments():
     parser.add_argument('--graph',dest='graph',type=int,default = 0)
     parser.add_argument('--step',dest='step',type=int,default = 5)
     parser.add_argument('--train_from',dest='train_from',type=int,default = 0)
-    parser.add_argument('--graph',dest='graph',type=int,default = 0)
 
     return parser.parse_args()
 
