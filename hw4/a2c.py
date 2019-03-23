@@ -68,6 +68,7 @@ class A2C(object):
             v[actions[t]] = convRewards[t] + self.getReward(states,t+self.n) - self.getReward(states,t)
             yTrue[t] = v
         self.model.train_on_batch(x = np.array(states), y=np.array(yTrue))
+        self.critic_model.train_on_batch(x = np.array(states), y=convRewards)
 
     def generate_episode(self, render=False):
         # Generates an episode by executing the current policy in the given env.
