@@ -7,7 +7,7 @@ import keras.backend as K
 from keras.models import load_model
 import gym
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from time import time
 
@@ -37,12 +37,13 @@ class Reinforce(object):
         G_t = [0] * T
         yTrue = [0] * T
         for t in reversed(list(range(T))):
-            reward = rewards[t] + last_reward*gamma
+            reward = rewards[t] + last_reward * gamma
             last_reward = reward
             G_t[t] = reward
             v = np.zeros(self.action_size)
             v[actions[t]] = reward + baseline/T
             yTrue[t] = v
+        #np.add(G_t,baseline/T)
         self.model.train_on_batch(x = np.array(states), y=np.array(yTrue))
         return np.mean(G_t)*T
 
@@ -67,7 +68,8 @@ class Reinforce(object):
             state,reward,done,_ = self.env.step(action)
             rewards.append(reward)
         rewards = np.array(rewards,dtype='float')
-        print(np.sum(rewards))
+        #print("total reward = ",np.sum(rewards),", ep length = ",len(rewards))
+        #print(rewards)
         return states, actions, rewards
 
     @staticmethod
@@ -82,8 +84,9 @@ class Reinforce(object):
 
     def predict_action_verbose(self,states):
         a = self.model.predict(np.array(states))
-        for r in a:
-            print(r)
+        print(a)
+        #for r in a:
+        #    print(r)
 
     def save_model(self,model_file=None):
         if(model_file is None):
@@ -97,14 +100,20 @@ class Reinforce(object):
     def load_model(self,model_file,file_no):
         self.model.load_weights(model_file + str(file_no) + ".h5")
 
-    def test(self,episodes=1,verbosity = 1,render = False):
+    def test(self,episodes=100,verbosity = 0,render = False):
         rewards = []
         for e in range(episodes):
             states, actions, reward = self.generate_episode(render=render)
             rewards.append(np.sum(reward))
+            if(verbosity == 1 and len(reward) == 1000):
+                self.predict_action_verbose(states)
             if(e == 0 and verbosity == 1):
                 self.predict_action_verbose(states)
         return np.mean(rewards), np.std(rewards)
+
+    def plot_reward(self,x,perf,std):
+        plt.errorbar(x, perf, std)
+        plt.show()
 
 def parse_arguments():
     # Command-line flags are defined here.
@@ -131,6 +140,7 @@ def parse_arguments():
     parser.add_argument('--model_file',dest='model_file',type=str,default = 'models/model')
     parser.add_argument('--test',dest='test',type=int,default = 0)
     parser.add_argument('--train_from',dest='train_from',type=int,default = 0)
+    parser.add_argument('--graph',dest='graph',type=int,default = 0)
 
     return parser.parse_args()
 
@@ -150,6 +160,7 @@ def main(args):
     test = args.test
     verbose = args.verbose
     train_from = args.train_from
+    graph = args.graph
 
     # Create the environment.
     env = gym.make('LunarLander-v2')
@@ -160,20 +171,34 @@ def main(args):
 
     # TODO: Train the model using REINFORCE and plot the learning curve.
     r = Reinforce(model,lr,model_file,env,train_from)
-    if(not test):
+    if(not test and not graph):
         if(train_from):
             r.load_model(model_file,train_from)
         rewards = []
         baseline = 0
-        for i in range(train_from*100,num_episodes):
+        for i in range(train_from*100,num_episodes+1):
             print("iteration = ",i, ", baseline = ", baseline)
             rewards.append(r.train(render=render,baseline = baseline))
             if(i % 100 == 0):
                 r.save_model()
                 baseline = -1*runningAverage(rewards)
+    elif(graph):
+        x = []
+        perfs = []
+        stds = []
+        for i in range(0,graph+1,5):
+            model = i*100
+            x.append(model)
+            r.load_model(model_file,i)
+            perf,std = r.test()
+            print(model,perf,std)
+            perfs.append(perf)
+            stds.append(std)
+        r.plot_reward(x,perfs,stds)
     else:
         r.load_model(model_file,test)
         print(r.test(verbosity = verbose,render=render))
+
 
 
 if __name__ == '__main__':
