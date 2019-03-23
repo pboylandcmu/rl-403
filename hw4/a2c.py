@@ -21,7 +21,7 @@ class A2C(object):
     # This class inherits the Reinforce class, so for example, you can reuse
     # generate_episode() here.
 
-    def __init__(self, model, lr, critic_model, critic_lr,actor_file,critic_file, n=20):
+    def __init__(self, model, lr, critic_model, critic_lr,actor_file,critic_file,env, n=20):
         # Initializes A2C.
         # Args:
         # - model: The actor model.
@@ -36,6 +36,8 @@ class A2C(object):
         self.critic_file_count = 0
         self.actor_model_file = actor_file
         self.critic_model_file = critic_file
+        self.env = env
+        self.action_size = 4
 
         # TODO: Define any training operations and optimizers here, initialize
         #       your variables, or alternately compile your model here.  
@@ -93,9 +95,9 @@ class A2C(object):
 
     def save_actor_model(self,model_file=None):
         if(model_file is None):
-            name = self.actor_model_file + str(self.file_count) + ".h5"
+            name = self.actor_model_file + str(self.actor_file_count) + ".h5"
         else:
-            name = model_file + str(self.file_count) + ".h5"
+            name = model_file + str(self.actor_file_count) + ".h5"
         self.actor_file_count += 1
         self.model.save_weights(name)
         return name
@@ -105,9 +107,9 @@ class A2C(object):
 
     def save_critic_model(self,model_file=None):
         if(model_file is None):
-            name = self.critic_model_file + str(self.file_count) + ".h5"
+            name = self.critic_model_file + str(self.critic_file_count) + ".h5"
         else:
-            name = model_file + str(self.file_count) + ".h5"
+            name = model_file + str(self.critic_file_count) + ".h5"
         self.critic_file_count += 1
         self.critic_model.save_weights(name)
         return name
@@ -164,7 +166,7 @@ def make_critic(lr):
     model.add(Dense(16, activation='relu'))
     model.add(Dense(16, activation='relu'))
     model.add(Dense(1, activation='linear'))
-    model.compile(optimizer=keras.optimizers.Adam(lr=learning_rate),
+    model.compile(optimizer=keras.optimizers.Adam(lr=lr),
             loss='MSE')
     return model
 
@@ -193,7 +195,7 @@ def main(args):
         model = keras.models.model_from_json(f.read())
 
     # TODO: Train the model using A2C and plot the learning curves.
-    a2c = A2C(model,lr,critic,critic_lr,actor_file,critic_file,n=n)
+    a2c = A2C(model,lr,critic,critic_lr,actor_file,critic_file,env,n=n)
     if(not test and not graph):
         if(train_from):
             a2c.load_actor_model(actor_file,train_from)
