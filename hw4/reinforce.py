@@ -114,12 +114,13 @@ class Reinforce(object):
     def graph(self,graph,step=5):
         means = []
         stds = []
-        for i in range(0,graph,step):
+        for i in range(0,graph+1,step):
             self.load_model(self.model_file,i)
             mean, std = self.test(episodes=100,render=False,verbosity=0)
             means.append(mean)
             stds.append(std)
-        plt.plot(range(0,graph,step),means)
+            print("model = ",i,", mean = ,",mean," std = ",std)
+        plt.plot(range(0,graph*100,step*100),means)
         plt.xlabel("model number")
         plt.ylabel("average reward")
         plt.title("Lunar Lander REINFORCE Performance plot")
@@ -153,7 +154,6 @@ def parse_arguments():
 
     parser.add_argument('--model_file',dest='model_file',type=str,default = 'models/model')
     parser.add_argument('--test',dest='test',type=int,default = 0)
-    parser.add_argument('--graph',dest='graph',type=int,default = 0)
     parser.add_argument('--step',dest='step',type=int,default = 5)
     parser.add_argument('--train_from',dest='train_from',type=int,default = 0)
     parser.add_argument('--graph',dest='graph',type=int,default = 0)
