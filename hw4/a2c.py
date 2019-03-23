@@ -175,16 +175,17 @@ def parse_arguments():
     parser.add_argument('--actor_file',dest='actor_file',type=str,default = 'actor_models/model')
     parser.add_argument('--critic_file',dest='critic_file',type=str,default = 'critic_models/model')
     parser.add_argument('--test',dest='test',type=int,default = 0)
-    parser.add_argument('--graph',dest='graph',type=int,default = 0)
     parser.add_argument('--step',dest='step',type=int,default = 5)
     parser.add_argument('--train_from',dest='train_from',type=int,default = 0)
     parser.add_argument('--graph',dest='graph',type=int,default = 0)
+    parser.add_argument('--verbose', dest='verbose',
+                              action='store_true')
 
     return parser.parse_args()
 
 def make_critic(lr):
     model = Sequential()
-    model.add(Dense(16, input_dim=4, activation='relu'))
+    model.add(Dense(16, input_dim=8, activation='relu'))
     model.add(Dense(16, activation='relu'))
     model.add(Dense(16, activation='relu'))
     model.add(Dense(1, activation='linear'))
@@ -222,11 +223,11 @@ def main(args):
         if(train_from):
             a2c.load_actor_model(actor_file,train_from)
             a2c.load_critic_model(critic_file,train_from)
-            for i in range(train_from*100,num_episodes+1):
-                print("iteration = ",i)
-                a2c.train(render=render)
-                if(i % 100 == 0):
-                    a2c.save_models()
+        for i in range(train_from*100,num_episodes+1):
+            print("iteration = ",i)
+            a2c.train(render=render)
+            if(i % 100 == 0):
+                a2c.save_models()
     elif graph():
         pass
     elif(test):
