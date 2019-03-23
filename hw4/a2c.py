@@ -58,14 +58,15 @@ class A2C(object):
         # Trains the model on a single episode using A2C.
         # TODO: Implement this method. It may be helpful to call the class
         #       method generate_episode() to generate training data.
+        n = self.n+1
         states,actions,rewards = self.generate_episode(render=render)
         T = len(states)
         rewards = np.multiply(rewards,1.0/(100))
         yTrue = [0] * T
-        convRewards = list(reversed(A2C.r2R(rewards,self.n)))
+        convRewards = list(reversed(A2C.r2R(rewards,n)))
         for t in reversed(list(range(T))):
             v = np.zeros(self.action_size)
-            v[actions[t]] = convRewards[t] + self.getReward(states,t+self.n) - self.getReward(states,t)
+            v[actions[t]] = convRewards[t] + self.getReward(states,t+n) - self.getReward(states,t)
             yTrue[t] = v
         self.model.train_on_batch(x = np.array(states), y=np.array(yTrue))
         self.critic_model.train_on_batch(x = np.array(states), y=convRewards)
