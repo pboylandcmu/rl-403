@@ -60,7 +60,6 @@ class A2C(object):
         # TODO: Implement this method. It may be helpful to call the class
         #       method generate_episode() to generate training data.
         states,actions,rewards = self.generate_episode(render=render)
-        n = self.n+1
         T = len(states)
         rewards = np.multiply(rewards,1.0/(100))
         yTrue = [0] * T
