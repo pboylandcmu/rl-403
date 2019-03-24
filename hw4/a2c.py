@@ -21,7 +21,7 @@ class A2C(object):
     # This class inherits the Reinforce class, so for example, you can reuse
     # generate_episode() here.
 
-    def __init__(self, model, lr, critic_model, critic_lr,actor_file,critic_file,env, n=20):
+    def __init__(self, model, lr, critic_model, critic_lr,actor_file,critic_file,env,train_from, n=20):
         # Initializes A2C.
         # Args:
         # - model: The actor model.
@@ -32,8 +32,8 @@ class A2C(object):
         self.model = model
         self.critic_model = critic_model
         self.n = n
-        self.actor_file_count = 0
-        self.critic_file_count = 0
+        self.actor_file_count = train_from
+        self.critic_file_count = train_from
         self.actor_model_file = actor_file
         self.critic_model_file = critic_file
         self.env = env
@@ -59,7 +59,6 @@ class A2C(object):
         # Trains the model on a single episode using A2C.
         # TODO: Implement this method. It may be helpful to call the class
         #       method generate_episode() to generate training data.
-        n = self.n+1
         states,actions,rewards = self.generate_episode(render=render)
         n = self.n+1
         T = len(states)
@@ -220,7 +219,7 @@ def main(args):
         model = keras.models.model_from_json(f.read())
 
     # TODO: Train the model using A2C and plot the learning curves.
-    a2c = A2C(model,lr,critic,critic_lr,actor_file,critic_file,env,n=n)
+    a2c = A2C(model,lr,critic,critic_lr,actor_file,critic_file,env,train_from,n=n)
     if(not test and not graph):
         if(train_from):
             a2c.load_actor_model(actor_file,train_from)
@@ -230,7 +229,7 @@ def main(args):
             a2c.train(render=render)
             if(i % 100 == 0):
                 a2c.save_models()
-    elif graph():
+    elif graph:
         pass
     elif(test):
         a2c.load_actor_model(actor_file,test)
