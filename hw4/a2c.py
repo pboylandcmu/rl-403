@@ -61,6 +61,7 @@ class A2C(object):
         #       method generate_episode() to generate training data.
         states,actions,rewards = self.generate_episode(render=render)
         T = len(states)
+        n = self.n+1
         rewards = np.multiply(rewards,1.0/(100))
         yTrue = [0] * T
         convRewards = list(reversed(A2C.r2R(rewards,n)))
@@ -92,7 +93,7 @@ class A2C(object):
             state,reward,done,_ = self.env.step(action)
             rewards.append(reward)
         rewards = np.array(rewards,dtype='float')
-        print("total reward = ",np.sum(rewards),", ep length = ",len(rewards))
+        #print("total reward = ",np.sum(rewards),", ep length = ",len(rewards))
         #print(rewards)
         return states, actions, rewards
 
@@ -146,6 +147,23 @@ class A2C(object):
             states, actions, reward = self.generate_episode(render=render)
             rewards.append(np.sum(reward))
         return np.mean(rewards), np.std(rewards)
+
+    def graph(self,graph,n,step=5):
+        x = []
+        means = []
+        stds = []
+        for i in range(0,graph+1,step):
+            x.append(i*100)
+            self.load_actor_model(self.actor_model_file,i)
+            mean, std = self.test(episodes=100,render=False,verbosity=0)
+            means.append(mean)
+            stds.append(std)
+            print("model = ",i,", mean = ,",mean," std = ",std)
+        plt.errorbar(x,means,stds)
+        plt.xlabel("model number")
+        plt.ylabel("average reward")
+        plt.title("Lunar Lander A2C Performance plot -- n = " + str(n))
+        plt.show()
 
 
 def parse_arguments():
@@ -229,7 +247,7 @@ def main(args):
             if(i % 100 == 0):
                 a2c.save_models()
     elif graph:
-        pass
+        a2c.graph(graph,n)
     elif(test):
         a2c.load_actor_model(actor_file,test)
         a2c.load_critic_model(critic_file,test)
