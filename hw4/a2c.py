@@ -10,7 +10,7 @@ from keras.models import load_model
 import gym
 
 import matplotlib
-#matplotlib.use('Agg')
+#matplotlib.use("TKAgg")
 import matplotlib.pyplot as plt
 
 from reinforce import Reinforce
@@ -59,7 +59,8 @@ class A2C(object):
         # Trains the model on a single episode using A2C.
         # TODO: Implement this method. It may be helpful to call the class
         #       method generate_episode() to generate training data.
-        states,actions,rewards = self.generate_episode(render=render)
+        n = self.n+1
+        states,actions,rewards = self.generate_episode(render=render,verbose=False)
         T = len(states)
         n = self.n+1
         rewards = np.multiply(rewards,1.0/(100))
@@ -72,7 +73,7 @@ class A2C(object):
         self.model.train_on_batch(x = np.array(states), y=np.array(yTrue))
         self.critic_model.train_on_batch(x = np.array(states), y=convRewards)
 
-    def generate_episode(self, render=False):
+    def generate_episode(self, render=False,verbose=False):
         # Generates an episode by executing the current policy in the given env.
         # Returns:
         # - a list of states, indexed by time step
@@ -82,6 +83,7 @@ class A2C(object):
         states = []
         actions = []
         rewards = []
+        values = []
         state = self.env.reset()
         done = False
         while not done:
@@ -92,6 +94,8 @@ class A2C(object):
             actions.append(action)
             state,reward,done,_ = self.env.step(action)
             rewards.append(reward)
+            if verbose:
+                values.append(self.predict_value(state))
         rewards = np.array(rewards,dtype='float')
         #print("total reward = ",np.sum(rewards),", ep length = ",len(rewards))
         #print(rewards)
@@ -144,7 +148,7 @@ class A2C(object):
     def test(self,episodes=100,verbosity = 0,render = False):
         rewards = []
         for e in range(episodes):
-            states, actions, reward = self.generate_episode(render=render)
+            states, actions, reward = self.generate_episode(render=render,verbose=verbosity)
             rewards.append(np.sum(reward))
         return np.mean(rewards), np.std(rewards)
 
@@ -247,11 +251,11 @@ def main(args):
             if(i % 100 == 0):
                 a2c.save_models()
     elif graph:
-        a2c.graph(graph,n)
+        a2c.graph(graph,n,step = args.step)
     elif(test):
         a2c.load_actor_model(actor_file,test)
         a2c.load_critic_model(critic_file,test)
-        print(a2c.test(verbosity = verbose,render = render))
+        print(a2c.test(verbosity = verbose,render = render, episodes=100))
 
 
 if __name__ == '__main__':
