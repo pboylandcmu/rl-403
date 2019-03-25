@@ -21,7 +21,7 @@ class A2C(object):
     # This class inherits the Reinforce class, so for example, you can reuse
     # generate_episode() here.
 
-    def __init__(self, model, lr, critic_model, critic_lr,actor_file,critic_file,env, n=20, trainfrom=0):
+    def __init__(self, model, lr, critic_model, critic_lr,actor_file,critic_file,env,train_from, n=20):
         # Initializes A2C.
         # Args:
         # - model: The actor model.
@@ -32,8 +32,8 @@ class A2C(object):
         self.model = model
         self.critic_model = critic_model
         self.n = n
-        self.actor_file_count = trainfrom
-        self.critic_file_count = trainfrom
+        self.actor_file_count = train_from
+        self.critic_file_count = train_from
         self.actor_model_file = actor_file
         self.critic_model_file = critic_file
         self.env = env
@@ -41,7 +41,7 @@ class A2C(object):
         self.model.compile(optimizer=keras.optimizers.Adam(lr=lr),loss=self.customLoss)
 
         # TODO: Define any training operations and optimizers here, initialize
-        #       your variables, or alternately compile your model here.  
+        #       your variables, or alternately compile your model here.
 
     @staticmethod
     def r2R(rewards, n):
@@ -62,6 +62,7 @@ class A2C(object):
         n = self.n+1
         states,actions,rewards = self.generate_episode(render=render,verbose=False)
         T = len(states)
+        n = self.n+1
         rewards = np.multiply(rewards,1.0/(100))
         yTrue = [0] * T
         convRewards = list(reversed(A2C.r2R(rewards,n)))
@@ -96,7 +97,7 @@ class A2C(object):
             if verbose:
                 values.append(self.predict_value(state))
         rewards = np.array(rewards,dtype='float')
-        print("total reward = ",np.sum(rewards),", ep length = ",len(rewards))
+        #print("total reward = ",np.sum(rewards),", ep length = ",len(rewards))
         #print(rewards)
         return states, actions, rewards
 
@@ -154,21 +155,23 @@ class A2C(object):
             rewards.append(np.sum(reward))
         return np.mean(rewards), np.std(rewards)
 
-    def graph(self,graph,step=5):
+    def graph(self,graph,n,step=5):
+        x = []
         means = []
         stds = []
         for i in range(0,graph+1,step):
+            x.append(i*100)
             self.load_actor_model(self.actor_model_file,i)
-            self.load_critic_model(self.critic_model_file,i)
             mean, std = self.test(episodes=100,render=False,verbosity=0)
             means.append(mean)
             stds.append(std)
             print("model = ",i,", mean = ,",mean," std = ",std)
-        plt.errorbar(range(0,graph*100+1,step*100),means,yerr=stds)
+        plt.errorbar(x,means,stds)
         plt.xlabel("model number")
         plt.ylabel("average reward")
-        plt.title("Lunar Lander A2C Performance plot")
+        plt.title("Lunar Lander A2C Performance plot -- n = " + str(n))
         plt.show()
+
 
 def parse_arguments():
     # Command-line flags are defined here.
@@ -234,13 +237,13 @@ def main(args):
     # Create the environment.
     env = gym.make('LunarLander-v2')
     critic = make_critic(critic_lr)
-    
+
     # Load the actor model from file.
     with open(model_config_path, 'r') as f:
         model = keras.models.model_from_json(f.read())
 
     # TODO: Train the model using A2C and plot the learning curves.
-    a2c = A2C(model,lr,critic,critic_lr,actor_file,critic_file,env,n=n,trainfrom = train_from)
+    a2c = A2C(model,lr,critic,critic_lr,actor_file,critic_file,env,train_from,n=n)
     if(not test and not graph):
         if(train_from):
             a2c.load_actor_model(actor_file,train_from)
@@ -251,7 +254,7 @@ def main(args):
             if(i % 100 == 0):
                 a2c.save_models()
     elif graph:
-        a2c.graph(graph,step=args.step)
+        a2c.graph(graph,n,step = args.step)
     elif(test):
         a2c.load_actor_model(actor_file,test)
         a2c.load_critic_model(critic_file,test)
