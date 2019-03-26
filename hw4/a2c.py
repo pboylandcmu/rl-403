@@ -12,6 +12,7 @@ import gym
 import matplotlib
 #matplotlib.use("TKAgg")
 import matplotlib.pyplot as plt
+import time as sleeper
 
 from reinforce import Reinforce
 
@@ -98,7 +99,6 @@ class A2C(object):
                 values.append(self.predict_value(state))
         rewards = np.array(rewards,dtype='float')
         #print("total reward = ",np.sum(rewards),", ep length = ",len(rewards))
-        #print(rewards)
         return states, actions, rewards
 
     def predict_action(self,state):
@@ -157,8 +157,14 @@ class A2C(object):
         means = []
         stds = []
         for i in range(0,graph+1,step):
+            while True:
+                try:
+                    self.load_actor_model(self.actor_model_file,i)
+                    break
+                except Exception as e:
+                    print(e)
+                    sleeper.sleep(1)
             x.append(i*100)
-            self.load_actor_model(self.actor_model_file,i)
             mean, std = self.test(episodes=100,render=False,verbosity=0)
             means.append(mean)
             stds.append(std)
