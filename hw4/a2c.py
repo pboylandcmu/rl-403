@@ -42,7 +42,7 @@ class A2C(object):
         self.model.compile(optimizer=keras.optimizers.Adam(lr=lr),loss=self.customLoss)
 
         # TODO: Define any training operations and optimizers here, initialize
-        #       your variables, or alternately compile your model here.  
+        #       your variables, or alternately compile your model here.
 
     @staticmethod
     def r2R(rewards, n):
@@ -105,7 +105,10 @@ class A2C(object):
         s = [state]
         a = self.model.predict(np.array(s))
         #return np.argmax(a[0])
-        return np.random.choice(range(self.action_size),p=a[0])
+
+        #print(a)
+        aa = np.clip(a[0], 1e-20, 1.0)
+        return np.random.choice(range(self.action_size),p=aa)
 
     def predict_value(self,state):
         s = [state]
@@ -240,7 +243,7 @@ def main(args):
     # Create the environment.
     env = gym.make('LunarLander-v2')
     critic = make_critic(critic_lr)
-    
+
     # Load the actor model from file.
     with open(model_config_path, 'r') as f:
         model = keras.models.model_from_json(f.read())
@@ -261,7 +264,7 @@ def main(args):
     elif(test):
         a2c.load_actor_model(actor_file,test)
         a2c.load_critic_model(critic_file,test)
-        print(a2c.test(verbosity = verbose,render = render, episodes=100))
+        print(a2c.test(verbosity = verbose,render = render, episodes=1))
 
 
 if __name__ == '__main__':
