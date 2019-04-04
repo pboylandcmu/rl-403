@@ -88,6 +88,7 @@ class DDPG:
         # Write function for testing here.
         # Remember you do not need to add noise to the actions
         # outputed by your actor when testing.
+        pass
 
     def add_noise(self, action):
         #TODO
@@ -127,6 +128,7 @@ class DDPG:
         # Create transitions for hindsight experience replay and
         # store into replay memory.
         # into the experience replay buffer.    
+        pass
 
     def random_action(self):
         return [x*2 - 1 for x in np.random.rand(2)]
