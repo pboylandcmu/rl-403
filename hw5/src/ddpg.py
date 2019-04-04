@@ -77,9 +77,9 @@ class DDPG:
         a = actor_model.predict(np.array([state]))
         return a[0] # + some noise???
 
-    def predict_value(self,state,critic_model):
+    def predict_value(self,state,action,critic_model):
         s = [state]
-        a = critic_model.predict(np.array(s))
+        a = critic_model.predict(np.concatenate(np.array(s),np.array(action)))
         #return np.argmax(a[0])
         return a[0][0]
 
@@ -91,6 +91,9 @@ class DDPG:
     def add_noise(self, action):
         #TODO
         return action
+
+    def y_value(self,reward,state):
+        reward + self.gamma * self.predict_value(state,self.predict_action(state,self.actor_target),self.critic_target)
 
     def train(self, num_episodes, hindsight=False):
         # Write your code here to interact with the environment.
@@ -112,7 +115,8 @@ class DDPG:
                     action = self.add_noise(action)
                 newstate,reward,done,_ = self.env.step(action)
                 self.replay_memory.append(state,action,reward,newstate)
-                yvalue = reward + self.gamma * self.predict_value(newstate,self.predict_action(newstate,self.actor_target),self.critic_target)
+                transitions = self.replay_memory.sample_batch()
+                augtrans = [(s1,a,r,s2,self.y_value(reward,state)) for (s1,a,r,s2) in transitions]
 
 
     def add_hindsight_replay_experience(self, states, actions, end_state):
