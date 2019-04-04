@@ -24,6 +24,7 @@ class DDPG:
         self.actor_target_file = args.actor_target_file
         self.critic_file = args.critic_file
         self.critic_target_file = args.critic_target_file
+        self.save_dir = args.saved_dir
         self.train_from = args.train_from
         self.actor_file_count = self.train_from
         self.critic_file_count = self.train_from
@@ -143,28 +144,28 @@ class DDPG:
         self.save_critic_model()
 
     def save_actor_model(self):
-        name1 = self.actor_file + str(self.actor_file_count) + ".h5"
-        name2 = self.actor_target_file + str(self.actor_file_count) + ".h5"
+        name1 = self.actor_file + str(self.dir + self.actor_file_count) + ".h5"
+        name2 = self.actor_target_file + str(self.dir + self.actor_file_count) + ".h5"
         self.actor_file_count += 1
         self.actor.save_weights(name1)
         self.actor_target.save_weights(name2)
         return name
 
     def load_actor_model(self,actor_file,actor_target_file,file_no):
-        self.actor.load_weights(actor_file + str(file_no) + ".h5")
-        self.actor_target.load_weights(actor_target_file + str(file_no) + ".h5")
+        self.actor.load_weights(self.dir + actor_file + str(file_no) + ".h5")
+        self.actor_target.load_weights(self.dir + actor_target_file + str(file_no) + ".h5")
 
     def save_critic_model(self):
-        name1 = self.critic_file + str(self.critic_file_count) + ".h5"
-        name2 = self.critic_target_file + str(self.critic_file_count) + ".h5"
+        name1 = self.critic_file + str(self.dir + self.critic_file_count) + ".h5"
+        name2 = self.critic_target_file + str(self.dir + self.critic_file_count) + ".h5"
         self.critic_file_count += 1
         self.critic.save_weights(name1)
         self.critic_target.save_weights(name2)
         return name
 
     def load_critic_model(self,critic_file,critic_target_file,file_no):
-        self.critic.load_weights(critic_file + str(file_no) + ".h5")
-        self.critic_target.load_weights(critic_target_file + str(file_no) + ".h5")
+        self.critic.load_weights(self.dir + critic_file + str(file_no) + ".h5")
+        self.critic_target.load_weights(self.dir + critic_target_file + str(file_no) + ".h5")
 
 
 
@@ -213,10 +214,11 @@ def parse_arguments():
                               help="Whether to render the environment.")
     parser.set_defaults(render=False)
 
-    parser.add_argument('--actor_file',dest='actor_file',type=str,default = 'actor_models/model')
-    parser.add_argument('--actor_target_file',dest='actor_target_file',type=str,default = 'actor_models/target_model')
-    parser.add_argument('--critic_file',dest='critic_file',type=str,default = 'critic_models/model')
-    parser.add_argument('--critic_target_file',dest='critic_target_file',type=str,default = 'critic_models/target_model')
+    parser.add_argument('--save_dir',dest = 'saved_dir', type = str, default = 'models')
+    parser.add_argument('--actor_file',dest='actor_file',type=str,default = 'actor_model')
+    parser.add_argument('--actor_target_file',dest='actor_target_file',type=str,default = 'actor_target_model')
+    parser.add_argument('--critic_file',dest='critic_file',type=str,default = 'critic_model')
+    parser.add_argument('--critic_target_file',dest='critic_target_file',type=str,default = 'critic_target_model')
     parser.add_argument('--test',dest='test',type=int,default = 0)
     parser.add_argument('--step',dest='step',type=int,default = 5)
     parser.add_argument('--train_from',dest='train_from',type=int,default = 0)
