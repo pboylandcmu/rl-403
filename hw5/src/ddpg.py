@@ -55,25 +55,6 @@ class DDPG:
                 loss='MSE')
         return model
 
-    def generate_episode(self,process):
-        states = []
-        actions = []
-        rewards = []
-        values = []
-        state = self.env.reset()
-        done = False
-        while not done:
-            if(render):
-                self.env.render()
-            states.append(state)
-            action = self.predict_action(state)
-            actions.append(action)
-            state,reward,done,_ = self.env.step(action)
-            rewards.append(reward)
-        rewards = np.array(rewards,dtype='float')
-        if self.verbose: print("total reward = ",np.sum(rewards),", ep length = ",len(rewards))
-        return states, actions, rewards
-
     def predict_action(self,state,actor_model):
         a = actor_model.predict(np.array([state]))
         return a[0] # + some noise???
