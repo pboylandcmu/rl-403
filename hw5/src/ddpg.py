@@ -80,6 +80,9 @@ class DDPG:
         # Remember you do not need to add noise to the actions
         # outputed by your actor when testing.
 
+    def add_noise(self, action):
+        #TODO
+        return action
 
     def train(self, num_episodes, hindsight=False):
         # Write your code here to interact with the environment.
@@ -90,11 +93,27 @@ class DDPG:
         # If ``hindsight'' option is specified, you will use the
         # provided environment to add hallucinated transitions
         # into the experience replay buffer.
+        for _ in range(num_episodes):
+            state = self.env.reset()
+            done = False
+            while not done:
+                if np.random.rand() < self.epsilon:
+                    action = self.random_action()
+                else:
+                    action = self.predict_action(state,self.actor)
+                    action = self.add_noise(action)
+                newstate,reward,done,_ = self.env.step(action)
+                self.replay_memory.append(state,action,reward,newstate)
+                yvalue = reward + self.gamma * self.predict_value(newstate,self.predict_action(newstate,self.actor_target),self.critic_target)
+
 
     def add_hindsight_replay_experience(self, states, actions, end_state):
         # Create transitions for hindsight experience replay and
         # store into replay memory.
         # into the experience replay buffer.    
+
+    def random_action(self):
+        return [x*2 - 1 for x in np.random.rand(2)]
 
     def burn_in(self, burn=10000):
         done = False
@@ -102,7 +121,7 @@ class DDPG:
         for _ in range(burn):
             if done:
                 state = self.env.reset()
-            action = np.random.rand(2)
+            action = self.random_action()
             old_state = state
             state, reward, done, _ = self.env.step(action)
             self.replay_memory.append((old_state,action,reward,state,done))
