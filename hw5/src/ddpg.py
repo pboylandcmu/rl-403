@@ -110,7 +110,7 @@ class DDPG:
         # If ``hindsight'' option is specified, you will use the
         # provided environment to add hallucinated transitions
         # into the experience replay buffer.
-        for _ in range(num_episodes):
+        for e in range(num_episodes):
             state = self.env.reset()
             done = False
             total_reward = 0
@@ -146,7 +146,7 @@ class DDPG:
                 self.critic_target.set_weights(
                     np.multiply(self.tau,self.critic.get_weights())
                     + np.multiply((1-self.tau),self.critic_target.get_weights()))
-            print(total_reward)
+            print("episode = ",e,", total reward = ",total_reward)
 
 
 
@@ -254,7 +254,7 @@ def main():
     args = parse_arguments()
     env = gym.make('Pushing2D-v0')
     algo = DDPG(env, args)
-    algo.train(500) #50000
+    algo.train(5000) #50000
     print(algo.test(100))
 
 if __name__=='__main__':
