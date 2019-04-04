@@ -138,9 +138,11 @@ def parse_arguments():
     parser.add_argument('--num-episodes', dest='num_episodes', type=int,
                         default=50000, help="Number of episodes to train on.")
     parser.add_argument('--actor_lr', dest='actor_lr', type=float,
-                        default=5e-4, help="The actor's learning rate.")
+                        default=1e-4, help="The actor's learning rate.")
     parser.add_argument('--critic_lr', dest='critic_lr', type=float,
-                        default=1e-4, help="The critic's learning rate.")
+                        default=1e-3, help="The critic's learning rate.")
+    parser.add_argument('--tau', dest='tau', type=float,
+                        default=0.05, help="The rate to update the slow network.")
 
     parser_group = parser.add_mutually_exclusive_group(required=False)
     parser_group.add_argument('--render', dest='render',
