@@ -47,6 +47,8 @@ class DDPG:
         self.replay_memory = Replay_Memory()
         self.epsilon = 0
 
+        self.Adam = tf.train.AdamOptimizer(learning_rate = self.actor_lr)
+
 
     def actor_model_init(self,lr):
         model = Sequential()
@@ -111,6 +113,7 @@ class DDPG:
         for _ in range(num_episodes):
             state = self.env.reset()
             done = False
+            total_reward = 0
             while not done:
                 #TODO: make espilon independent
                 if np.random.rand() < self.epsilon:
@@ -119,14 +122,22 @@ class DDPG:
                     action = self.predict_action(state,self.actor)
                     action = self.add_noise(action)
                 newstate,reward,done,_ = self.env.step(action)
+                total_reward += reward
                 self.replay_memory.append((state,action,reward,newstate))
-                transitions = self.replay_memory.sample_batch()
+                transitions = self.replay_memory.sample_batch(1)
                 augtrans = [(s1,a,r,s2,self.y_value(reward,state)) for (s1,a,r,s2) in transitions]
                 y_values = [y_value for (_,_,_,_,y_value) in augtrans]
                 state_actions = [concat(s1,a) for (s1,a,_,_) in transitions]
 
                 #update the critic
                 self.critic.fit(x = np.array(state_actions),y = np.array(y_values),verbose=0,epochs=1)
+
+                #update the actor
+                value_grads = K.gradients(self.critic.output, self.critic.input)
+                #print(value_grads[0][0][6:])
+                param_grads = tf.gradients(self.actor.output,self.actor.trainable_weights,grad_ys = value_grads[0][0][6:])
+                
+                self.Adam.apply_gradients(list(zip(param_grads,self.actor.trainable_weights)))
 
                 #update the target weights
                 self.actor_target.set_weights(
@@ -135,6 +146,7 @@ class DDPG:
                 self.critic_target.set_weights(
                     np.multiply(self.tau,self.critic.get_weights())
                     + np.multiply((1-self.tau),self.critic_target.get_weights()))
+            print(total_reward)
 
 
 
@@ -242,7 +254,7 @@ def main():
     args = parse_arguments()
     env = gym.make('Pushing2D-v0')
     algo = DDPG(env, args)
-    algo.train(100) #50000
+    algo.train(500) #50000
     print(algo.test(100))
 
 if __name__=='__main__':
