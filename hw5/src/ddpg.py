@@ -185,7 +185,7 @@ def parse_arguments():
     parser.add_argument('--tau', dest='tau', type=float,
                         default=0.05, help="The rate to update the slow network.")
     parser.add_argument('--gamma', dest='gamma', type=float,
-                        default=1, help="The decay of value rate.")
+                        default=1.0, help="The decay of value rate.")
 
     parser_group = parser.add_mutually_exclusive_group(required=False)
     parser_group.add_argument('--render', dest='render',
