@@ -25,6 +25,8 @@ class DDPG:
         self.critic_file = args.critic_file
         self.critic_target_file = args.critic_target_file
         self.train_from = args.train_from
+        self.actor_file_count = self.train_from
+        self.critic_file_count = self.train_from
         self.verbose = args.verbose
         self.env = env
 
@@ -71,9 +73,15 @@ class DDPG:
         if self.verbose: print("total reward = ",np.sum(rewards),", ep length = ",len(rewards))
         return states, actions, rewards
 
-    def predict_action(self,state):
-        a = self.actor.predict(np.array([state]))
+    def predict_action(self,state,actor_model):
+        a = actor_model.predict(np.array([state]))
         return a[0] # + some noise???
+
+    def predict_value(self,state,critic_model):
+        s = [state]
+        a = critic_model.predict(np.array(s))
+        #return np.argmax(a[0])
+        return a[0][0]
 
     def test(self, num_episodes):
         # Write function for testing here.
@@ -106,6 +114,35 @@ class DDPG:
             old_state = state
             state, reward, done, _ = self.env.step(action)
             self.replay_memory.append((old_state,action,reward,state,done))
+
+    def save_models(self):
+        self.save_actor_model()
+        self.save_critic_model()
+
+    def save_actor_model(self):
+        name1 = self.actor_file + str(self.actor_file_count) + ".h5"
+        name2 = self.actor_target_file + str(self.actor_file_count) + ".h5"
+        self.actor_file_count += 1
+        self.actor.save_weights(name1)
+        self.actor_target.save_weights(name2)
+        return name
+
+    def load_actor_model(self,actor_file,actor_target_file,file_no):
+        self.actor.load_weights(actor_file + str(file_no) + ".h5")
+        self.actor_target.load_weights(actor_target_file + str(file_no) + ".h5")
+
+    def save_critic_model(self):
+        name1 = self.critic_file + str(self.critic_file_count) + ".h5"
+        name2 = self.critic_target_file + str(self.critic_file_count) + ".h5"
+        self.critic_file_count += 1
+        self.critic.save_weights(name1)
+        self.critic_target.save_weights(name2)
+        return name
+
+    def load_critic_model(self,critic_file,critic_target_file,file_no):
+        self.critic.load_weights(critic_file + str(file_no) + ".h5")
+        self.critic_target.load_weights(critic_target_file + str(file_no) + ".h5")
+
 
 
 class Replay_Memory():
