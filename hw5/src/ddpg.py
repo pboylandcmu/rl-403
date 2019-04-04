@@ -118,6 +118,7 @@ class DDPG:
                 self.replay_memory.append(state,action,reward,newstate)
                 transitions = self.replay_memory.sample_batch()
                 augtrans = [(s1,a,r,s2,self.y_value(reward,state)) for (s1,a,r,s2) in transitions]
+                
 
 
     def add_hindsight_replay_experience(self, states, actions, end_state):
