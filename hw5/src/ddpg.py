@@ -30,6 +30,7 @@ class DDPG:
         self.critic_file_count = self.train_from
         self.verbose = args.verbose
         self.tau = args.tau
+        self.gamma = args.gamma
         self.env = env
 
         self.actor = self.actor_model_init(self.actor_lr)
@@ -101,7 +102,7 @@ class DDPG:
                     action = self.predict_action(state,self.actor)
                     action = self.add_noise(action)
                 newstate,reward,done,_ = self.env.step(action)
-                self.replay_memory.append(state,action,reward,newstate)
+                self.replay_memory.append((state,action,reward,newstate))
                 transitions = self.replay_memory.sample_batch()
                 augtrans = [(s1,a,r,s2,self.y_value(reward,state)) for (s1,a,r,s2) in transitions]
                 y_values = [y_value for (_,_,_,_,y_value) in augtrans]
@@ -183,6 +184,8 @@ def parse_arguments():
                         default=1e-3, help="The critic's learning rate.")
     parser.add_argument('--tau', dest='tau', type=float,
                         default=0.05, help="The rate to update the slow network.")
+    parser.add_argument('--gamma', dest='gamma', type=float,
+                        default=1, help="The decay of value rate.")
 
     parser_group = parser.add_mutually_exclusive_group(required=False)
     parser_group.add_argument('--render', dest='render',
