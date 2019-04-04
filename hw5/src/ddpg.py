@@ -123,7 +123,6 @@ class DDPG:
                 state_actions = [np.concat(s1,a) for (s1,a,_,_) in transitions]
                 self.critic.fit(x = np.array(state_actions),y = np.array(y_values),verbose=0,epochs=1)
 
-
     def add_hindsight_replay_experience(self, states, actions, end_state):
         # Create transitions for hindsight experience replay and
         # store into replay memory.
