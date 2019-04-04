@@ -29,12 +29,15 @@ class DDPG:
         self.actor_file_count = self.train_from
         self.critic_file_count = self.train_from
         self.verbose = args.verbose
+        self.tau = args.tau
         self.env = env
 
         self.actor = self.actor_model_init(self.actor_lr)
         self.critic = self.critic_model_init(self.critic_lr)
         self.actor_target = keras.models.clone_model(self.actor)
         self.critic_target = keras.models.clone_model(self.critic)
+        self.replay_memory = Replay_Memory()
+        self.epsilon = 0
 
 
     def actor_model_init(self,lr):
@@ -109,6 +112,7 @@ class DDPG:
             state = self.env.reset()
             done = False
             while not done:
+                #TODO: make espilon independent
                 if np.random.rand() < self.epsilon:
                     action = self.random_action()
                 else:
@@ -122,10 +126,6 @@ class DDPG:
                 state_actions = [np.concat(s1,a) for (s1,a,_,_) in transitions]
                 self.critic.fit(x = np.array(state_actions),y = np.array(y_values),verbose=0,epochs=1)
 
-    def add_hindsight_replay_experience(self, states, actions, end_state):
-        # Create transitions for hindsight experience replay and
-        # store into replay memory.
-        # into the experience replay buffer.    
 
     def random_action(self):
         return [x*2 - 1 for x in np.random.rand(2)]
@@ -178,8 +178,6 @@ class Replay_Memory():
         self.memsize = memory_size
         self.counter = 0
         self.full = False
-
-        pass
 
     def sample_batch(self, batch_size=32):
         if self.full:
