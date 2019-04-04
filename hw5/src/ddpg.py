@@ -80,7 +80,17 @@ class DDPG:
         # Write function for testing here.
         # Remember you do not need to add noise to the actions
         # outputed by your actor when testing.
-        pass
+        rewards = []
+        for _ in range(num_episodes):
+            total = 0
+            state = self.env.reset()
+            done = False
+            while not done:
+                action = self.predict_action(state,self.actor)
+                state,reward,done,_ = self.env.step(action)
+                total += reward
+            rewards.append(total)
+        return np.mean(rewards)
 
     def add_noise(self, action):
         #TODO
@@ -220,7 +230,8 @@ def main():
     args = parse_arguments()
     env = gym.make('Pushing2D-v0')
     algo = DDPG(env, args)
-    algo.train(50000)
+    algo.train(100) #50000
+    print(algo.test(100))
 
 if __name__=='__main__':
     main()
