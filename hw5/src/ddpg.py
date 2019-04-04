@@ -8,7 +8,7 @@ from keras.models import load_model
 import argparse
 import gym
 import envs
-
+from numpy.random import randint
 
 
 class DDPG:
