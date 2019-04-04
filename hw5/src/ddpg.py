@@ -127,28 +127,26 @@ class DDPG:
         self.save_critic_model()
 
     def save_actor_model(self):
-        name1 = self.actor_file + str(self.dir + self.actor_file_count) + ".h5"
-        name2 = self.actor_target_file + str(self.dir + self.actor_file_count) + ".h5"
+        name1 = self.actor_file + str(self.save_dir + self.actor_file_count) + ".h5"
+        name2 = self.actor_target_file + str(self.save_dir + self.actor_file_count) + ".h5"
         self.actor_file_count += 1
         self.actor.save_weights(name1)
         self.actor_target.save_weights(name2)
-        return name
 
     def load_actor_model(self,actor_file,actor_target_file,file_no):
-        self.actor.load_weights(self.dir + actor_file + str(file_no) + ".h5")
-        self.actor_target.load_weights(self.dir + actor_target_file + str(file_no) + ".h5")
+        self.actor.load_weights(self.save_dir + actor_file + str(file_no) + ".h5")
+        self.actor_target.load_weights(self.save_dir + actor_target_file + str(file_no) + ".h5")
 
     def save_critic_model(self):
-        name1 = self.critic_file + str(self.dir + self.critic_file_count) + ".h5"
-        name2 = self.critic_target_file + str(self.dir + self.critic_file_count) + ".h5"
+        name1 = self.critic_file + str(self.save_dir + self.critic_file_count) + ".h5"
+        name2 = self.critic_target_file + str(self.save_dir + self.critic_file_count) + ".h5"
         self.critic_file_count += 1
         self.critic.save_weights(name1)
         self.critic_target.save_weights(name2)
-        return name
 
     def load_critic_model(self,critic_file,critic_target_file,file_no):
-        self.critic.load_weights(self.dir + critic_file + str(file_no) + ".h5")
-        self.critic_target.load_weights(self.dir + critic_target_file + str(file_no) + ".h5")
+        self.critic.load_weights(self.save_dir + critic_file + str(file_no) + ".h5")
+        self.critic_target.load_weights(self.save_dir + critic_target_file + str(file_no) + ".h5")
 
 
 
