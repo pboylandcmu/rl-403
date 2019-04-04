@@ -125,6 +125,14 @@ class DDPG:
                 y_values = [y_value for (_,_,_,_,y_value) in augtrans]
                 state_actions = [concat(s1,a) for (s1,a,_,_) in transitions]
                 self.critic.fit(x = np.array(state_actions),y = np.array(y_values),verbose=0,epochs=1)
+                self.actor_target.set_weights(
+                    np.multiply(self.tau,self.actor.get_weights())
+                    + np.multiply((1-self.tau),self.actor_target.get_weights()))
+                self.critic_target.set_weights(
+                    np.multiply(self.tau,self.critic.get_weights())
+                    + np.multiply((1-self.tau),self.critic_target.get_weights()))
+
+
 
     def random_action(self):
         return [x*2 - 1 for x in np.random.rand(2)]
