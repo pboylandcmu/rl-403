@@ -10,6 +10,13 @@ import gym
 import envs
 from numpy.random import randint
 
+def concat(list1,list2):
+    result = []
+    for e in list1:
+        result.append(e)
+    for e in list2:
+        result.append(e)
+    return result
 
 class DDPG:
     def __init__(self, env, args):
@@ -64,8 +71,8 @@ class DDPG:
         return a[0] # + some noise???
 
     def predict_value(self,state,action,critic_model):
-        s = [state]
-        a = critic_model.predict(np.concatenate(np.array(s),np.array(action)))
+        inp = concat(state,action)
+        a = critic_model.predict(np.array([inp]))
         #return np.argmax(a[0])
         return a[0][0]
 
@@ -106,7 +113,7 @@ class DDPG:
                 transitions = self.replay_memory.sample_batch()
                 augtrans = [(s1,a,r,s2,self.y_value(reward,state)) for (s1,a,r,s2) in transitions]
                 y_values = [y_value for (_,_,_,_,y_value) in augtrans]
-                state_actions = [np.concatenate(s1,a) for (s1,a,_,_) in transitions]
+                state_actions = [concat(s1,a) for (s1,a,_,_) in transitions]
                 self.critic.fit(x = np.array(state_actions),y = np.array(y_values),verbose=0,epochs=1)
 
     def random_action(self):
