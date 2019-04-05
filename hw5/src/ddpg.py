@@ -54,9 +54,9 @@ class DDPG:
         #print(value_grads[0][0][6:])
         param_grads = tf.gradients(self.actor.output,self.actor.trainable_weights,grad_ys = value_grads[0][0][6:])
 
-        updateActor = self.Adam.apply_gradients(list(zip(param_grads,self.actor.trainable_weights)))
+        self.updateActor = self.Adam.apply_gradients(list(zip(param_grads,self.actor.trainable_weights)))
 
-        sess = tf.Session()
+        self.sess = tf.Session()
 
 
     def actor_model_init(self,lr):
@@ -141,7 +141,7 @@ class DDPG:
                 #update the critic
                 self.critic.fit(x = np.array(state_actions),y = np.array(y_values),verbose=0,epochs=1)
                 #update the actor
-                sess.run(updateActor)
+                self.sess.run(self.updateActor, feeddict={})
 
                 #update the target weights
                 self.actor_target.set_weights(
