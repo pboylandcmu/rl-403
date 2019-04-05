@@ -147,22 +147,14 @@ class DDPG:
                 augtrans = [(s1,a,r,s2,self.y_value(reward,state)) for (s1,a,r,s2) in transitions]
                 y_values = [y_value for (_,_,_,_,y_value) in augtrans]
                 state_actions = [concat(s1,a) for (s1,a,_,_) in transitions]
-<<<<<<< HEAD
-                states = [s1 for (s1,_,_,_) in transitions]
-=======
                 states = [s for (s,_,_,_) in transitions]
->>>>>>> 6f7549c175a9703a90225993e0010a6d3e4129ad
 
                 #update the critic
                 self.critic.fit(x = np.array(state_actions),y = np.array(y_values),verbose=0,epochs=1)
                 #update the actor
-<<<<<<< HEAD
                 self.sess.run(self.updateActor, feed_dict=
                     {self.actor.input : states,
                     self.critic.input : state_actions})
-=======
-                self.sess.run(self.value_grads, feed_dict={self.critic.input : state_actions, self.actor.input : states})
->>>>>>> 6f7549c175a9703a90225993e0010a6d3e4129ad
 
                 #update the target weights
                 self.actor_target.set_weights(
