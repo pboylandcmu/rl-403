@@ -50,11 +50,11 @@ class DDPG:
 
         self.Adam = tf.train.AdamOptimizer(learning_rate = self.actor_lr)
 
-        value_grads = K.gradients(self.critic.output, self.critic.input)
-        #print(value_grads[0][0][6:])
-        param_grads = tf.gradients(self.actor.output,self.actor.trainable_weights,grad_ys = value_grads[0][0][6:])
+        self.value_grads = K.gradients(self.critic.output, self.critic.input)
+        #print(self.value_grads[0][0][6:])
+        self.param_grads = tf.gradients(self.actor.output,self.actor.trainable_weights,grad_ys = self.value_grads[0][0][6:])
 
-        self.updateActor = self.Adam.apply_gradients(list(zip(param_grads,self.actor.trainable_weights)))
+        self.updateActor = self.Adam.apply_gradients(list(zip(self.param_grads,self.actor.trainable_weights)))
 
         self.sess = tf.Session()
 
@@ -255,6 +255,8 @@ def parse_arguments():
     return parser.parse_args()
 
 def main():
+    tf.enable_eager_execution()
+
     args = parse_arguments()
     env = gym.make('Pushing2D-v0')
     algo = DDPG(env, args)
