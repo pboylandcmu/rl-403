@@ -9,6 +9,7 @@ import argparse
 import gym
 import envs
 from numpy.random import randint
+import time
 
 def concat(list1,list2):
     result = []
@@ -45,9 +46,17 @@ class DDPG:
         self.actor_target = keras.models.clone_model(self.actor)
         self.critic_target = keras.models.clone_model(self.critic)
         self.replay_memory = Replay_Memory()
-        self.epsilon = 0
+        self.epsilon = 0.2
 
         self.Adam = tf.train.AdamOptimizer(learning_rate = self.actor_lr)
+
+        value_grads = K.gradients(self.critic.output, self.critic.input)
+        #print(value_grads[0][0][6:])
+        param_grads = tf.gradients(self.actor.output,self.actor.trainable_weights,grad_ys = value_grads[0][0][6:])
+
+        updateActor = self.Adam.apply_gradients(list(zip(param_grads,self.actor.trainable_weights)))
+
+        sess = tf.Session()
 
 
     def actor_model_init(self,lr):
@@ -131,13 +140,8 @@ class DDPG:
 
                 #update the critic
                 self.critic.fit(x = np.array(state_actions),y = np.array(y_values),verbose=0,epochs=1)
-
                 #update the actor
-                value_grads = K.gradients(self.critic.output, self.critic.input)
-                #print(value_grads[0][0][6:])
-                param_grads = tf.gradients(self.actor.output,self.actor.trainable_weights,grad_ys = value_grads[0][0][6:])
-                
-                self.Adam.apply_gradients(list(zip(param_grads,self.actor.trainable_weights)))
+                sess.run(updateActor)
 
                 #update the target weights
                 self.actor_target.set_weights(
@@ -194,7 +198,7 @@ class DDPG:
 
 class Replay_Memory():
 
-    def __init__(self, memory_size=50000):
+    def __init__(self, memory_size=5000):
         self.memory = None
         self.memsize = memory_size
         self.counter = 0
