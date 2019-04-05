@@ -54,20 +54,18 @@ class DDPG:
 
         self.Adam = tf.train.AdamOptimizer(learning_rate = self.actor_lr)
 
-        self.value_grads = K.gradients(self.critic.output, self.critic.input)
+        self.value_grads = tf.gradients(self.critic.output, self.critic.input)
         #print(self.value_grads[0][0][6:])
         self.param_grads = tf.gradients(self.actor.output,self.actor.trainable_weights,grad_ys = self.value_grads[0][0][6:])
 
         self.updateActor = self.Adam.apply_gradients(list(zip(self.param_grads,self.actor.trainable_weights)))
 
-        tf.print(self.value_grads)
+        self.myprint = tf.print(self.param_grads)
 
         self.sess = tf.Session()
+        #K.set_session(self.sess)
         init = tf.global_variables_initializer()
         self.sess.run(init)
-
-        init_op = tf.global_variables_initializer()
-        self.sess.run(init_op)
 
 
     def actor_model_init(self,lr):
@@ -152,9 +150,32 @@ class DDPG:
                 #update the critic
                 self.critic.fit(x = np.array(state_actions),y = np.array(y_values),verbose=0,epochs=1)
                 #update the actor
-                self.sess.run(self.updateActor, feed_dict=
-                    {self.actor.input : states,
-                    self.critic.input : state_actions})
+                inputs = {
+                    self.actor.input : states,
+                    self.critic.input : state_actions}
+                garbageinputs = {
+                    self.actor.input : [np.add(s,2) for s in states],
+                    self.critic.input : [np.add(sa,2) for sa in state_actions]
+                }
+                garbageinputs2 = {
+                    self.actor.input : states,
+                    self.critic.input : [np.add(sa,2) for sa in state_actions]
+                }
+                garbageinputs3 = {
+                    self.actor.input : [np.add(s,2) for s in states],
+                    self.critic.input : state_actions
+                }
+                '''self.sess.run(self.myprint,feed_dict=inputs)
+                print("\n\n\n\n")
+                self.sess.run(self.myprint,feed_dict=garbageinputs)
+                print("\n\n\n\n")
+                self.sess.run(self.myprint,feed_dict=garbageinputs2)
+                print("\n\n\n\n")
+                self.sess.run(self.myprint,feed_dict=garbageinputs3)
+                print("\n\n\n\n")'''
+                self.sess.run(self.updateActor, feed_dict=inputs)
+                exit(0)
+
 
                 #update the target weights
                 self.actor_target.set_weights(
