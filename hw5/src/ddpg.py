@@ -57,6 +57,8 @@ class DDPG:
         self.updateActor = self.Adam.apply_gradients(list(zip(self.param_grads,self.actor.trainable_weights)))
 
         self.sess = tf.Session()
+        init = tf.global_variables_initializer()
+        self.sess.run(init)
 
 
     def actor_model_init(self,lr):
@@ -104,8 +106,7 @@ class DDPG:
         return np.mean(rewards)
 
     def add_noise(self, action):
-        #TODO
-        return action
+        return action + np.random.normal(0,.01,2)
 
     def y_value(self,reward,state):
         reward + self.gamma * self.predict_value(state,self.predict_action(state,self.actor_target),self.critic_target)
@@ -137,11 +138,14 @@ class DDPG:
                 augtrans = [(s1,a,r,s2,self.y_value(reward,state)) for (s1,a,r,s2) in transitions]
                 y_values = [y_value for (_,_,_,_,y_value) in augtrans]
                 state_actions = [concat(s1,a) for (s1,a,_,_) in transitions]
+                states = [s1 for (s1,_,_,_) in transitions]
 
                 #update the critic
                 self.critic.fit(x = np.array(state_actions),y = np.array(y_values),verbose=0,epochs=1)
                 #update the actor
-                self.sess.run(self.updateActor, feeddict={})
+                self.sess.run(self.updateActor, feed_dict=
+                    {self.actor.input : states,
+                    self.critic.input : state_actions})
 
                 #update the target weights
                 self.actor_target.set_weights(
@@ -255,7 +259,7 @@ def parse_arguments():
     return parser.parse_args()
 
 def main():
-    tf.enable_eager_execution()
+    #tf.enable_eager_execution()
 
     args = parse_arguments()
     env = gym.make('Pushing2D-v0')
