@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import tensorflow as tf
 import keras
@@ -10,6 +11,8 @@ import gym
 import envs
 from numpy.random import randint
 import time
+import sys
+
 
 def concat(list1,list2):
     result = []
@@ -47,6 +50,7 @@ class DDPG:
         self.critic_target = keras.models.clone_model(self.critic)
         self.replay_memory = Replay_Memory()
         self.epsilon = 0.2
+        self.std = 0.01
 
         self.Adam = tf.train.AdamOptimizer(learning_rate = self.actor_lr)
 
@@ -56,7 +60,12 @@ class DDPG:
 
         self.updateActor = self.Adam.apply_gradients(list(zip(self.param_grads,self.actor.trainable_weights)))
 
+        tf.print(self.value_grads)
+
         self.sess = tf.Session()
+
+        init_op = tf.global_variables_initializer()
+        self.sess.run(init_op)
 
 
     def actor_model_init(self,lr):
@@ -137,11 +146,12 @@ class DDPG:
                 augtrans = [(s1,a,r,s2,self.y_value(reward,state)) for (s1,a,r,s2) in transitions]
                 y_values = [y_value for (_,_,_,_,y_value) in augtrans]
                 state_actions = [concat(s1,a) for (s1,a,_,_) in transitions]
+                states = [s for (s,_,_,_) in transitions]
 
                 #update the critic
                 self.critic.fit(x = np.array(state_actions),y = np.array(y_values),verbose=0,epochs=1)
                 #update the actor
-                self.sess.run(self.updateActor, feeddict={})
+                self.sess.run(self.value_grads, feed_dict={self.critic.input : state_actions, self.actor.input : states})
 
                 #update the target weights
                 self.actor_target.set_weights(
@@ -255,7 +265,7 @@ def parse_arguments():
     return parser.parse_args()
 
 def main():
-    tf.enable_eager_execution()
+    #tf.enable_eager_execution()
 
     args = parse_arguments()
     env = gym.make('Pushing2D-v0')
