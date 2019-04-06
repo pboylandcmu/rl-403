@@ -27,6 +27,7 @@ class DDPG:
         # Initialize your class here with relevant arguments
         # e.g. learning rate for actor and critic, update speed
         # for target weights, etc.
+
         self.render = args.render
         self.actor_lr = args.actor_lr
         self.critic_lr = args.critic_lr
@@ -55,46 +56,71 @@ class DDPG:
         self.Adam = tf.train.AdamOptimizer(learning_rate = self.actor_lr)
 
         self.value_grads = tf.gradients(self.critic.output, self.critic.input)
-        #print(self.value_grads[0][0][6:])
-        self.param_grads = tf.gradients(self.actor.output,self.actor.trainable_weights,grad_ys = self.value_grads[0][0][6:])
 
-        self.updateActor = self.Adam.apply_gradients(list(zip(self.param_grads,self.actor.trainable_weights)))
+        #self.param_grads = tf.gradients(
+        #    self.actor.output,self.actor.trainable_weights,grad_ys = self.value_grads[0][:,6:])
+        self.actor_loss = -tf.math.reduce_sum(tf.math.multiply(self.value_grads[0][:,6:],self.actor.output))
+        self.updateActor = self.Adam.minimize(self.actor_loss,var_list=self.actor.trainable_weights)
 
-        self.myprint = tf.print(self.param_grads)
+        #self.updateActor = self.Adam.apply_gradients(list(zip(self.param_grads,self.actor.trainable_weights)))
+
+        self.y_values = tf.placeholder(tf.float32)
+        self.critic_loss = tf.losses.mean_squared_error(self.y_values,self.critic.outputs)
+        self.updateCritic = self.Adam.minimize(self.critic_loss)
+        self.print_value_grads = tf.print(self.value_grads[0][:,6:])
+        self.print_value_grads_full = tf.print(self.value_grads)
+        #self.print_param_grads = tf.print(self.param_grads)
+        self.print_critic_loss = tf.print(self.critic_loss)
+        self.print_critic_outputs = tf.print(self.critic.output)
+        self.print_actor_weights = tf.print(self.actor.trainable_weights)
+        self.print_critic_weights = tf.print(self.critic.trainable_weights)
 
         self.sess = tf.Session()
-        #K.set_session(self.sess)
         init = tf.global_variables_initializer()
         self.sess.run(init)
+        K.set_session(self.sess)
+        
 
 
     def actor_model_init(self,lr):
         model = Sequential()
-        model.add(Dense(16, input_dim=6, activation='relu'))
+        model.add(Dense(400, input_dim=6, activation='relu'))
         model.add(Dense(16, activation='relu'))
         model.add(Dense(2, activation='tanh'))
-        model.compile(optimizer=keras.optimizers.Adam(lr=lr),
-                loss='MSE')
+        #model.compile(optimizer=keras.optimizers.Adam(lr=lr),
+        #        loss='MSE')
         return model
 
     def critic_model_init(self,lr):
         model = Sequential()
-        model.add(Dense(16, input_dim=8, activation='relu'))
+        model.add(Dense(400, input_dim=8, activation='relu'))
         model.add(Dense(16, activation='relu'))
         model.add(Dense(1, activation='linear'))
-        model.compile(optimizer=keras.optimizers.Adam(lr=lr),
-                loss='MSE')
+        #model.compile(optimizer=keras.optimizers.Adam(lr=lr),
+        #        loss='MSE')
         return model
 
     def predict_action(self,state,actor_model):
-        a = actor_model.predict(np.array([state]))
-        return a[0] # + some noise???
+        #a = actor_model.predict(np.array([state]))
+        a = self.sess.run(actor_model.output,feed_dict={actor_model.input : np.array([state])})
+        return a[0]
+
+    def predict_actions(self,states,actor_model):
+        #a = actor_model.predict(np.array(states))
+        a = self.sess.run(actor_model.output,feed_dict={actor_model.input : np.array(states)})
+        return a
 
     def predict_value(self,state,action,critic_model):
         inp = concat(state,action)
-        a = critic_model.predict(np.array([inp]))
-        #return np.argmax(a[0])
+        #a = critic_model.predict(np.array([inp]))
+        a = self.sess.run(critic_model.output,feed_dict={critic_model.input : np.array([inp])})
+        #print("value = ",a[0][0])
         return a[0][0]
+
+    def predict_values(self,state_actions,critic_model):
+        #a = critic_model.predict(np.array(state_actions))
+        a = self.sess.run(critic_model.output,feed_dict={critic_model.input : state_actions})
+        return a
 
     def test(self, num_episodes):
         # Write function for testing here.
@@ -115,8 +141,11 @@ class DDPG:
     def add_noise(self, action):
         return action + np.random.normal(0,.01,2)
 
-    def y_value(self,reward,state):
-        reward + self.gamma * self.predict_value(state,self.predict_action(state,self.actor_target),self.critic_target)
+    '''def y_value(self,reward,state,done):
+        if(not done): 
+            return reward + self.gamma * \
+            self.predict_value(state,self.predict_action(state,self.actor_target),self.critic_target)
+        else: return reward'''
 
     def train(self, num_episodes, hindsight=False):
         # Write your code here to interact with the environment.
@@ -138,44 +167,46 @@ class DDPG:
                 else:
                     action = self.predict_action(state,self.actor)
                     action = self.add_noise(action)
+                #print("action = ",action)
                 newstate,reward,done,_ = self.env.step(action)
                 total_reward += reward
-                self.replay_memory.append((state,action,reward,newstate))
-                transitions = self.replay_memory.sample_batch(1)
-                augtrans = [(s1,a,r,s2,self.y_value(reward,state)) for (s1,a,r,s2) in transitions]
-                y_values = [y_value for (_,_,_,_,y_value) in augtrans]
-                state_actions = [concat(s1,a) for (s1,a,_,_) in transitions]
-                states = [s for (s,_,_,_) in transitions]
+                self.replay_memory.append((state,action,reward,newstate,done))
+                transitions = self.replay_memory.sample_batch(32)
 
-                #update the critic
-                self.critic.fit(x = np.array(state_actions),y = np.array(y_values),verbose=0,epochs=1)
-                #update the actor
-                inputs = {
+                #get ys
+                s2s = [s2 for (_,_,_,s2,_) in transitions]
+                actions = np.array(self.predict_actions(s2s,self.actor_target))
+                #print(actions)
+                state_actions_2 = [concat(s2,a) for (s2,a) in zip(s2s,actions)]
+                predicted_values = self.predict_values(state_actions_2,self.critic_target)
+                #print(predicted_values)
+                y_values = [r+v if(not done) else r for ((s1,a,r,s2,done),v) in zip(transitions,predicted_values)]
+                #print(y_values)
+
+                state_actions = [concat(s1,a) for (s1,a,_,_,_) in transitions]
+                states = [s for (s,_,_,_,_) in transitions]
+
+                #update the actor and critic
+                actor_inputs = {
                     self.actor.input : states,
                     self.critic.input : state_actions}
-                garbageinputs = {
-                    self.actor.input : [np.add(s,2) for s in states],
-                    self.critic.input : [np.add(sa,2) for sa in state_actions]
+                critic_inputs = {
+                    self.critic.input : state_actions,
+                    self.y_values : y_values
                 }
-                garbageinputs2 = {
-                    self.actor.input : states,
-                    self.critic.input : [np.add(sa,2) for sa in state_actions]
-                }
-                garbageinputs3 = {
-                    self.actor.input : [np.add(s,2) for s in states],
-                    self.critic.input : state_actions
-                }
-                '''self.sess.run(self.myprint,feed_dict=inputs)
-                print("\n\n\n\n")
-                self.sess.run(self.myprint,feed_dict=garbageinputs)
-                print("\n\n\n\n")
-                self.sess.run(self.myprint,feed_dict=garbageinputs2)
-                print("\n\n\n\n")
-                self.sess.run(self.myprint,feed_dict=garbageinputs3)
-                print("\n\n\n\n")'''
-                self.sess.run(self.updateActor, feed_dict=inputs)
-                exit(0)
 
+                self.sess.run(self.updateActor, feed_dict=actor_inputs)
+                self.sess.run(self.updateCritic,feed_dict=critic_inputs)
+                self.sess.run(self.print_value_grads,feed_dict=actor_inputs)
+                self.sess.run(tf.print(self.actor.output),actor_inputs)
+                print("loss = ")
+                self.sess.run(tf.print(self.actor_loss),feed_dict=actor_inputs)
+                action = self.predict_action(state,self.actor)
+                print("action = ")
+                print(action)
+                print("value = ")
+                print(self.predict_value(state,action,self.critic))
+                #print(self.predict_value(state,action,self.critic))
 
                 #update the target weights
                 self.actor_target.set_weights(
@@ -184,7 +215,10 @@ class DDPG:
                 self.critic_target.set_weights(
                     np.multiply(self.tau,self.critic.get_weights())
                     + np.multiply((1-self.tau),self.critic_target.get_weights()))
+                state = newstate
             print("episode = ",e,", total reward = ",total_reward)
+            print("------------------------")
+
 
 
 
@@ -294,7 +328,7 @@ def main():
     args = parse_arguments()
     env = gym.make('Pushing2D-v0')
     algo = DDPG(env, args)
-    algo.train(5000) #50000
+    algo.train(50000) #50000
     print(algo.test(100))
 
 if __name__=='__main__':
