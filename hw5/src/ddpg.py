@@ -62,9 +62,9 @@ class DDPG:
         self.value_grads = tf.gradients(self.critic.output, self.critic.input)
         print(self.value_grads)
 
-        _,self.slice = tf.slicee(self.value_grads,[6,2],1)
+        _,self.split = tf.split(self.value_grads[0],[6,2],1)
         self.param_grads = tf.gradients(
-            self.actor.output,self.actor.trainable_weights,grad_ys = -self.slice) 
+            self.actor.output,self.actor.trainable_weights,grad_ys = -self.split) 
         #self.actor_loss = -(1.0/self.batch_size) * tf.math.reduce_sum(tf.math.multiply(self.value_grads[0][:,6:],self.actor.output))
         #self.updateActor = self.actor_Adam.minimize(self.actor_loss,var_list=self.actor.trainable_weights)
 
@@ -92,8 +92,8 @@ class DDPG:
 
     def actor_model_init(self,lr):
         model = Sequential()
-        model.add(Dense(400, input_dim=6, activation='relu'))
-        model.add(Dense(400, activation='relu'))
+        model.add(Dense(100, input_dim=6, activation='relu'))
+        model.add(Dense(50, activation='relu'))
         model.add(Dense(2, activation='tanh'))
         #model.compile(optimizer=keras.optimizers.Adam(lr=lr),
         #        loss='MSE')
@@ -102,7 +102,7 @@ class DDPG:
     def critic_model_init(self,lr):
         model = Sequential()
         model.add(Dense(400, input_dim=8, activation='relu'))
-        model.add(Dense(400   , activation='relu'))
+        model.add(Dense(400,activation='relu'))
         model.add(Dense(1, activation='linear'))
         #model.compile(optimizer=keras.optimizers.Adam(lr=lr),
         #        loss='MSE')
@@ -230,7 +230,7 @@ class DDPG:
             if(e%100 == 0):
                 plot_rewards.append(self.test(30))
                 plt.plot(plot_rewards,'b-')
-                plt.savefig('graph_means2.png',bbox_inches='tight')
+                plt.savefig('graph_means.png',bbox_inches='tight')
         #print("------------------------")
 
 
