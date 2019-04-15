@@ -4,9 +4,7 @@ import tensorflow as tf
 import keras
 import keras.backend as K
 from keras.models import Sequential
-from keras.models import Model
 from keras.layers import Dense
-from keras.layers import Input
 from keras.models import load_model
 import argparse
 import gym
@@ -61,10 +59,12 @@ class DDPG:
         self.actor_Adam = tf.train.AdamOptimizer(learning_rate = self.actor_lr)
         self.critic_Adam = tf.train.AdamOptimizer(learning_rate = self.critic_lr)
 
-        self.value_grads = tf.gradients(self.critic.output, self.critic.input[1])
+        self.value_grads = tf.gradients(self.critic.output, self.critic.input)
+        print(self.value_grads)
 
+        _,self.slice = tf.slicee(self.value_grads,[6,2],1)
         self.param_grads = tf.gradients(
-            self.actor.output,self.actor.trainable_weights,grad_ys = -self.value_grads[1]) 
+            self.actor.output,self.actor.trainable_weights,grad_ys = -self.slice) 
         #self.actor_loss = -(1.0/self.batch_size) * tf.math.reduce_sum(tf.math.multiply(self.value_grads[0][:,6:],self.actor.output))
         #self.updateActor = self.actor_Adam.minimize(self.actor_loss,var_list=self.actor.trainable_weights)
 
@@ -100,17 +100,10 @@ class DDPG:
         return model
 
     def critic_model_init(self,lr):
-        #model = Sequential()
-        state_in = Input(shape=(6,), name='state_in')
-        action_in = Input(shape=(2,),name='action_in')
-        x = keras.layers.concatenate([state_in,action_in])
-        x = Dense(400,activation="relu")(x)
-        x = Dense(400,activation="relu")(x)
-        out = Dense(1,activation="linear")(x)
-        model = Model(inputs=[state_in,action_in],outputs=out)
-        '''model.add(Dense(400, input_dim=8, activation='relu'))
+        model = Sequential()
+        model.add(Dense(400, input_dim=8, activation='relu'))
         model.add(Dense(400   , activation='relu'))
-        model.add(Dense(1, activation='linear'))'''
+        model.add(Dense(1, activation='linear'))
         #model.compile(optimizer=keras.optimizers.Adam(lr=lr),
         #        loss='MSE')
         return model
@@ -125,19 +118,16 @@ class DDPG:
 
     def predict_value(self,state,action,critic_model):
         inp = concat(state,action)
-        a = self.sess.run(critic_model.output,feed_dict={critic_model.input : [state,action]]})
+        a = self.sess.run(critic_model.output,feed_dict={critic_model.input : np.array([inp])})
         return a[0][0]
 
-    def predict_value2(self,states,actions,critic_model):
-        inp = []
-        for s,a in zip(states,actions):
-            inp.append([s,a])
-        a = self.sess.run(critic_model.output,feed_dict={critic_model.input : np.array(inp)})
+    def predict_value2(self,state_action,critic_model):
+        a = self.sess.run(critic_model.output,feed_dict={critic_model.input : np.array([state_action])})
         return a[0][0]
 
-    def predict_values(self,states,actions,critic_model):
-        a = self.sess.run(critic_model.output,feed_dict={critic_model.input : [states,actions]})
-        #a = self.sess.run(critic_model.output,feed_dict={critic_model.input : state_actions})
+    def predict_values(self,state_actions,critic_model):
+        #a = critic_model.predict(np.array(state_actions))
+        a = self.sess.run(critic_model.output,feed_dict={critic_model.input : state_actions})
         return a
 
     def test(self, num_episodes):
@@ -201,13 +191,12 @@ class DDPG:
                 s2s = [s2 for (_,_,_,s2,_) in transitions]
                 actions = np.array(self.predict_actions(s2s,self.actor_target))
                 #print("actions = \n",actions)
-                state_actions_2 = [[s2,a] for (s2,a) in zip(s2s,actions)]
+                state_actions_2 = [concat(s2,a) for (s2,a) in zip(s2s,actions)]
                 predicted_values = self.predict_values(state_actions_2,self.critic_target)
                 y_values = [r+self.gamma * v if(not done) else np.array([r]) for ((s1,a,r,s2,done),v) in zip(transitions,predicted_values)]
                 #print("y_vals = \n",[list(v) for v in y_values])
-                #state_actions = [[s1,a] for (s1,a,_,_,_) in transitions]
+                state_actions = [concat(s1,a) for (s1,a,_,_,_) in transitions]
                 states = [s for (s,_,_,_,_) in transitions]
-                actions = [s for (_,a,_,_,_) in transitions]
                 
                 #pred_vals = self.predict_values(state_actions,self.critic)
                 #print("predicted values = \n",pred_vals)
@@ -217,11 +206,12 @@ class DDPG:
                 #print("states \n",states,"s2s = \n",s2s)
 
                 #update the actor and critic
+                size = int(self.batch_size)
                 actor_inputs = {
-                    self.actor.input : states,
-                    self.critic.input : [states,actions]}
+                    self.actor.input : states[0:size],
+                    self.critic.input : state_actions[0:size]}
                 critic_inputs = {
-                    self.critic.input : [states,actions],
+                    self.critic.input : state_actions,
                     self.y_values : y_values
                 }
         
@@ -240,7 +230,7 @@ class DDPG:
             if(e%100 == 0):
                 plot_rewards.append(self.test(30))
                 plt.plot(plot_rewards,'b-')
-                plt.savefig('graph_means1.png',bbox_inches='tight')
+                plt.savefig('graph_means2.png',bbox_inches='tight')
         #print("------------------------")
 
 
