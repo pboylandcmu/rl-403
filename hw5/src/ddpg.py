@@ -116,15 +116,6 @@ class DDPG:
         a = self.sess.run(actor_model.output,feed_dict={actor_model.input : np.array(states)})
         return a
 
-    def predict_value(self,state,action,critic_model):
-        inp = concat(state,action)
-        a = self.sess.run(critic_model.output,feed_dict={critic_model.input : np.array([inp])})
-        return a[0][0]
-
-    def predict_value2(self,state_action,critic_model):
-        a = self.sess.run(critic_model.output,feed_dict={critic_model.input : np.array([state_action])})
-        return a[0][0]
-
     def predict_values(self,state_actions,critic_model):
         #a = critic_model.predict(np.array(state_actions))
         a = self.sess.run(critic_model.output,feed_dict={critic_model.input : state_actions})
@@ -148,12 +139,6 @@ class DDPG:
 
     def add_noise(self, action, std):
         return action + np.random.normal(0,std,2)
-
-    '''def y_value(self,reward,state,done):
-        if(not done): 
-            return reward + self.gamma * \
-            self.predict_value(state,self.predict_action(state,self.actor_target),self.critic_target)
-        else: return reward'''
 
     def train(self, num_episodes, hindsight=False):
         # Write your code here to interact with the environment.
