@@ -1,14 +1,10 @@
 from __future__ import print_function
 import numpy as np
 import tensorflow as tf
-import keras
-import keras.backend as K
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.models import load_model
 import argparse
 import gym
 import envs
+from keras.layers import Dense
 from numpy.random import randint
 import sys
 import matplotlib.pyplot as plt
@@ -46,14 +42,15 @@ class DDPG:
         self.epsilon = args.epsilon
         self.std = args.std
         self.regfactor = args.regularization
+        self.keeptime = args.time
 
         self.env = env
 
         #creating the models
-        self.actorInput,self.actorOutput,self.actorWeights = self.actor_model_init()
-        self.criticInput,self.criticOutput,self.criticWeights = self.critic_model_init(self.actorOutput,self.actorInput)
-        self.actorTargetInput,self.actorTargetOutput,self.actorTargetWeights = self.actor_model_init()
-        self.criticTargetInput,self.criticTargetOutput,self.criticTargetWeights = self.critic_model_init(self.actorTargetOutput,self.actorTargetInput)
+        self.actorInput,self.actorOutput,self.actorWeights = self.actor_model_init("1")
+        self.criticInput,self.criticOutput,self.criticWeights = self.critic_model_init(self.actorOutput,self.actorInput,"1")
+        self.actorTargetInput,self.actorTargetOutput,self.actorTargetWeights = self.actor_model_init("2")
+        self.criticTargetInput,self.criticTargetOutput,self.criticTargetWeights = self.critic_model_init(self.actorTargetOutput,self.actorTargetInput,"2")
 
         #creating the losses and optimizers
         self.AdamCritic = tf.train.AdamOptimizer(learning_rate = self.critic_lr)
@@ -89,24 +86,29 @@ class DDPG:
         self.print_actor_loss = tf.print(actorLoss)
         self.printActorGrads = tf.print(actorGradients)
 
+        self.printActorWeights = tf.print(self.actorWeights[0])
+        self.printActorTargetWeights = tf.print(self.actorTargetWeights[0])
+        self.printCriticWeights = tf.print(self.criticWeights[0])
+        self.printCriticTargetWeights = tf.print(self.criticTargetWeights[0])
 
 
-    def actor_model_init(self):
-        with tf.variable_scope("actorscope"):
-            actorInput = tf.placeholder(tf.float32, shape=(None,7))
-            layer1 = Dense(400,activation='tanh')(actorInput)
+
+    def actor_model_init(self,char):
+        with tf.variable_scope("actorscope"+char):
+            actorInput = tf.placeholder(tf.float32, shape=(None,7 if self.keeptime else 6))
+            layer1 = Dense(400,activation='relu')(actorInput)
             layer2 = Dense(400,activation='relu')(layer1)
             actorOutput = Dense(2,activation='tanh')(layer2)
-            actorWeights = tf.trainable_variables(scope="actorscope")
+            actorWeights = tf.trainable_variables(scope="actorscope"+char)
             return actorInput, actorOutput, actorWeights
 
-    def critic_model_init(self,actorInput,actorOutput):
-        with tf.variable_scope("criticscope"):
+    def critic_model_init(self,actorInput,actorOutput,char):
+        with tf.variable_scope("criticscope"+char):
             criticInput = tf.concat([actorInput,actorOutput],-1)
-            layer1 = Dense(400,activation='tanh')(criticInput)
+            layer1 = Dense(400,activation='relu')(criticInput)
             layer2 = Dense(400,activation='relu')(layer1)
             criticOutput = Dense(1,activation='linear')(layer2)
-            criticWeights = tf.trainable_variables(scope="criticscope")
+            criticWeights = tf.trainable_variables(scope="criticscope"+char)
             return criticInput, criticOutput, criticWeights
 
     def choose(self,state):
@@ -117,7 +119,7 @@ class DDPG:
         a = self.sess.run(self.criticTargetOutput,feed_dict={self.actorTargetInput: np.array([state])})
         return a[0][0]
 
-    def test(self, num_episodes,render=False,keeptime=True):
+    def test(self, num_episodes,render=False):
         print("\n\n\nTESTING BEGINS HERE\n\n\n")
         rewards = []
         for _ in range(num_episodes):
@@ -131,7 +133,7 @@ class DDPG:
                 objectxs.append(state[0])
                 objectys.append(state[1])
                 timestate = np.append(state,time)
-                action = self.choose(timestate)
+                action = self.choose(timestate if self.keeptime else state)
                 print(action)
                 
                 state,reward,done,_ = self.env.step(action)
@@ -143,13 +145,19 @@ class DDPG:
                 plt.show()
         return np.mean(rewards)
 
+    #doesn't copy state!
+    def substitute_goal(self,state,goal):
+        state[4] = goal[0]
+        state[5] = goal[1]
+        return state
+
     def add_noise(self, action):
         return action + np.random.normal(0,self.std,2)
 
-    def calc_y_value(self,reward,state):
-        return reward + self.gamma * self.predict_value(state)
+    def calc_y_value(self,reward,state,done):
+        return reward + self.gamma * (0 if done else self.predict_value(state))
 
-    def train(self, num_episodes, hindsight=False,keeptime=True):
+    def train(self, num_episodes, hindsight=False):
         for e in range(num_episodes):
             state = self.env.reset()
             done = False
@@ -157,57 +165,92 @@ class DDPG:
             time = 0.0
             while not done:
                 statetime = np.append(state,time)
+                fullstate = statetime if self.keeptime else state
                 if np.random.rand() < self.epsilon:
                     action = self.random_action()
                 else:
-                    action = self.choose(statetime)
+                    action = self.choose(fullstate)
                     print(action)
                     action = self.add_noise(action)
                 #print(action)
 
                 newstate,reward,done,_ = self.env.step(action)
-                reward = reward / 10.0
+
+                #scaling the rewards down to make it easier to learn
+                #reward = reward / 10.0
 
                 total_reward += reward
-                self.replay_memory.append((statetime,action,reward,np.append(newstate,time+1.0 if keeptime else time)))
+                newfullstate = np.append(newstate,time+1.0) if self.keeptime else newstate
+                self.replay_memory.append((fullstate,action,reward,newfullstate,done))
+
                 state = newstate
 
                 #setting up lists
                 transitions = self.replay_memory.sample_batch(32)
-                y_values = [self.calc_y_value(r,s) for (_,_,r,s) in transitions]
-                state_actions = [concat(s1,a) for (s1,a,_,_) in transitions]
-                states = [s for (s,_,_,_) in transitions]
+                y_values = [self.calc_y_value(r,s,d) for (_,_,r,s,d) in transitions]
+                state_actions = [concat(s1,a) for (s1,a,_,_,_) in transitions]
+                states = [s for (s,_,_,_,_) in transitions]
 
+                #print("--------------------BEFORE_-------------------------")
+                #self.sess.run(self.printActorTargetWeights)
+                #print("----------CRITIC----------")
+                #self.sess.run(self.printCriticTargetWeights)
+
+                #print("-------------------- BEFORE -------------------------")
+                #self.sess.run(self.printActorWeights)
+                self.sess.run(self.trainCritic,feed_dict={self.criticInput:state_actions, self.y_value:y_values})
+                #self.sess.run(self.printActorWeights)
+                #print("----------------------------AFTER---------------------------")
+
+                
+                self.sess.run(self.trainActor,feed_dict={self.actorInput:states})
+               # print("----------------------------AFTER---------------------------")
+               # self.sess.run(self.printActorTargetWeights)
+               # print("----------CRITIC----------")
+               # self.sess.run(self.printCriticTargetWeights)
+
+                #print("--------------------BEFORE_-------------------------")
+                #self.sess.run(self.printActorWeights)
+                #print("----------CRITIC----------")
+                #self.sess.run(self.printCriticWeights)
+
+                self.sess.run(self.copyCritic)
+                self.sess.run(self.copyActor)
+
+                #print("--------------------After-------------------------")
+                #self.sess.run(self.printActorWeights)
+                #print("----------CRITIC----------")
+                #self.sess.run(self.printCriticWeights)
+
+                time += 1.0
                 #print("actor loss")
                 #self.sess.run(self.print_actor_loss,feed_dict={self.actorInput:states})
-                self.sess.run(self.trainActor,feed_dict={self.actorInput:states})
                 #print("y-values")
                 #self.sess.run(self.print_y_value,feed_dict={self.criticInput:state_actions,self.actorInput:states, self.y_value:y_values})
                 #print("criticoutput")
-                #self.sess.run(self.print_critic_output,feed_dict={self.criticInput:state_actions,self.actorInput:states, self.y_value:y_values})
+                #self.sess.run(self.print_critic_output,feed_dict={self.criticInput:state_actions, self.y_value:y_values})
                 #print("loss next")
                 #self.sess.run(self.print_critic_loss,feed_dict={self.criticInput:state_actions,self.actorInput:states, self.y_value:y_values})
                 #print("actor_gradients")
                 #self.sess.run(self.printActorGrads,feed_dict={self.actorInput:states})
                 #print("")
-                self.sess.run(self.trainCritic,feed_dict={self.criticInput:state_actions, self.y_value:y_values})
+                #self.sess.run(self.trainCritic,feed_dict={self.criticInput:state_actions, self.y_value:y_values})
                 #self.sess.run(self.printCriticInput,{self.criticInput:fake_state_actions,self.actorInput:states})
                 #self.sess.run(self.printCriticInput,{self.actorInput:states})
                 #print("")
+                #print("actor weights")
+                #self.sess.run(self.printActorWeights,feed_dict={self.actorInput:states})
 
+                '''
                 transitions = self.replay_memory.sample_batch(32)
-                y_values = [self.calc_y_value(r,s) for (_,_,r,s) in transitions]
-                state_actions = [concat(s1,a) for (s1,a,_,_) in transitions]
-                states = [s for (s,_,_,_) in transitions]
+                y_values = [self.calc_y_value(r,s,d) for (_,_,r,s,d) in transitions]
+                state_actions = [concat(s1,a) for (s1,a,_,_,_) in transitions]
+                states = [s for (s,_,_,_,_) in transitions]
                 self.sess.run(self.trainCritic,feed_dict={self.criticInput:state_actions, self.y_value:y_values})
+                '''
+                
 
-
-                self.sess.run(self.copyCritic)
-                self.sess.run(self.copyActor)
-                if keeptime:
-                    time += 1.0
-
-            print("episode = ",e,", total reward = ",total_reward * 10)
+            print("episode = ",e,", total reward = ",total_reward)
 
 
     def random_action(self):
@@ -222,7 +265,7 @@ class DDPG:
             action = self.random_action()
             old_state = state
             state, reward, done, _ = self.env.step(action)
-            self.replay_memory.append((old_state,action,reward,state,done))'''
+            self.replay_memory.append((old_state,action,reward,state,done))
     def save_models(self):
         self.save_actor_model()
         self.save_critic_model()
@@ -247,7 +290,7 @@ class DDPG:
 
     def load_critic_model(self,critic_file,critic_target_file,file_no):
         self.critic.load_weights(self.save_dir + critic_file + str(file_no) + ".h5")
-        self.critic_target.load_weights(self.save_dir + critic_target_file + str(file_no) + ".h5")
+        self.critic_target.load_weights(self.save_dir + critic_target_file + str(file_no) + ".h5")'''
 
 
 
@@ -285,9 +328,9 @@ def parse_arguments():
     parser.add_argument('--tau', dest='tau', type=float,
                         default=0.05, help="The rate to update the slow network.")
     parser.add_argument('--gamma', dest='gamma', type=float,
-                        default=1.0, help="The decay of value rate.")
+                        default=0.98, help="The decay of value rate.")
     parser.add_argument('--epsilon', dest='epsilon', type=float,
-                        default=0.5, help="The chance of a random action.")
+                        default=0.2, help="The chance of a random action.")
     parser.add_argument('--std', dest='std', type=float,
                         default=0.01, help="The standard deviation of noise to add.")
     parser.add_argument('--reg', dest='regularization', type=float,
@@ -306,7 +349,7 @@ def parse_arguments():
     parser_group2.add_argument('--time', dest='time',
                               action='store_true',
                               help="Whether to give the network time.")
-    parser_group2.add_argument('--no-time', dest='render',
+    parser_group2.add_argument('--no-time', dest='time',
                               action='store_false',
                               help="Whether to give the network time.")
     parser.set_defaults(render=True)
@@ -330,7 +373,7 @@ def main():
     args = parse_arguments()
     env = gym.make('Pushing2D-v0')
     algo = DDPG(env, args)
-    algo.train(5000) #50000
+    algo.train(args.num_episodes) #50000
     print(algo.test(100))
 
 if __name__=='__main__':
