@@ -14,6 +14,7 @@ import envs
 import matplotlib
 import matplotlib.pyplot as plt
 from numpy.random import randint
+from copy import deepcopy
 import time
 import sys
 
@@ -50,6 +51,7 @@ class DDPG:
         self.env = env
         self.graph_name = args.graph_name
         self.batch_size = args.batch_size
+        self.hindsight = args.her
 
         self.actor = self.actor_model_init(self.actor_lr)
         self.critic = self.critic_model_init(self.critic_lr)
@@ -155,6 +157,8 @@ class DDPG:
             state = self.env.reset()
             done = False
             total_reward = 0
+            ep_states = []
+            ep_actions = []
             while not done:
                 if np.random.rand() < self.epsilon:
                     action = self.random_action()
@@ -168,13 +172,15 @@ class DDPG:
                 self.replay_memory.append((state,action,reward,newstate,done))
                 transitions = self.replay_memory.sample_batch(self.batch_size)
 
+                ep_states.append(deepcopy(state))
+                ep_actions.append(deepcopy(action))
+
                 #get ys
                 s2s = [s2 for (_,_,_,s2,_) in transitions]
                 pred_actions = np.array(self.predict_actions(s2s,self.actor_target))
                 predicted_values = self.predict_values(s2s,pred_actions,self.critic_target)
-                y_values = [r+self.gamma * v if(not done) else np.array([r]) for ((s1,a,r,s2,done),v) in zip(transitions,predicted_values)]
+                y_values = [r+self.gamma * v if(not d) else np.array([r]) for ((s1,a,r,s2,d),v) in zip(transitions,predicted_values)]
                 
-
                 states = [s for (s,_,_,_,_) in transitions]
                 actions = [a for (_,a,_,_,_) in transitions]
 
@@ -204,6 +210,12 @@ class DDPG:
                     + np.multiply((1.-self.tau),self.critic_target.get_weights()))
                 state = newstate
                 #if(self.verbose): print("------------------------")
+            if(self.hindsight):
+                final_state = state
+                her_states,her_rewards = self.env.apply_hindsight(ep_states,ep_actions,final_state)
+                for i in range(len(her_states)-1):
+                    self.replay_memory.append((her_states[i],ep_actions[i],her_rewards[i],her_states[i+1],False))
+                self.replay_memory.append((her_states[-1],ep_actions[-1],her_rewards[-1],[0,0,0,0,0,0],False))
             if(self.verbose):print("episode = ",e,", total reward = ",total_reward)
             if(e%100 == 0):
                 plot_rewards.append(self.test(60))
@@ -316,6 +328,8 @@ def parse_arguments():
                         default=128, help="Mini batch sample size")
     parser.add_argument('--graph_name', dest='graph_name', type=str,
                         default="graph_means", help="Name of generated graph")
+    parser.add_argument('--her', dest='her',
+                              action='store_true',default=False)
 
     parser_group = parser.add_mutually_exclusive_group(required=False)
     parser_group.add_argument('--render', dest='render',
