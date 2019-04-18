@@ -215,7 +215,7 @@ class DDPG:
                 her_states,her_rewards = self.env.apply_hindsight(ep_states,ep_actions,final_state)
                 for i in range(len(her_states)-1):
                     self.replay_memory.append((her_states[i],ep_actions[i],her_rewards[i],her_states[i+1],False))
-                self.replay_memory.append((her_states[-1],ep_actions[-1],her_rewards[-1],[0,0,0,0,0,0],False))
+                self.replay_memory.append((her_states[-1],ep_actions[-1],her_rewards[-1],[0,0,0,0,0,0],True))
             if(self.verbose):print("episode = ",e,", total reward = ",total_reward)
             if(e%100 == 0):
                 plot_rewards.append(self.test(60))
@@ -287,7 +287,7 @@ class DDPG:
 
 class Replay_Memory():
 
-    def __init__(self, memory_size=50_000):
+    def __init__(self, memory_size=100_000):
         self.memory = None
         self.memsize = memory_size
         self.counter = 0
