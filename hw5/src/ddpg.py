@@ -190,26 +190,9 @@ class DDPG:
                     self.critic.get_layer('actions').input : actions,
                     self.y_values : y_values
                 }
-                v = 0
-                a = 0
-                if(e%50 == 0 and self.verbose):
-                    #checks tau
-                    '''print(self.predict_action(state,self.actor) - self.predict_action(state,self.actor_target))
-                    print(self.predict_values([state],[action],self.critic) - self.predict_values([state],[action],self.critic_target))
-                    print("-------------") '''
-                    #check value_grads
-                    v = self.sess.run(self.critic.output,critic_inputs)
-                    a = self.sess.run(self.actor.output,actor_inputs)
-
 
                 self.sess.run(self.updateCritic,feed_dict=critic_inputs)
-                if(e%50 == 0 and self.verbose):
-                    print("value_grads: ",self.sess.run(self.value_grads,actor_inputs))
                 self.sess.run(self.updateActor, feed_dict=actor_inputs)
-                if(e%50 == 0 and self.verbose):
-                    print("value difference: ",self.sess.run(self.critic.output,critic_inputs)-v)
-                    print("action difference: ",self.sess.run(self.actor.output,actor_inputs)-a)
-                    print("-------------")
                 
 
                 #update the target weights
@@ -237,7 +220,7 @@ class DDPG:
             mean,std = self.test(100)
             rewards.append(mean)
             stds.append(std)
-            plt.errorbar(range(0,file_no*step+1,step),rewards,stds)
+            plt.errorbar(range(0,file_no*step+1,step),rewards,stds) #step > 1 or crash
             plt.xlabel("model number")
             plt.ylabel("average reward")
             plt.title("DDPG Performance plot")
