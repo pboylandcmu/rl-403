@@ -202,8 +202,12 @@ class DDPG:
                 #self.sess.run(self.printActorWeights)
                 #print("----------------------------AFTER---------------------------")
 
-                
+                #print("-------------------- BEFORE -------------------------")
+                #self.sess.run(self.printCriticWeights)
                 self.sess.run(self.trainActor,feed_dict={self.actorInput:states})
+                #print("--------------------After-------------------------")
+                #self.sess.run(self.printCriticWeights)
+
                # print("----------------------------AFTER---------------------------")
                # self.sess.run(self.printActorTargetWeights)
                # print("----------CRITIC----------")
