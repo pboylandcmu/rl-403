@@ -3,8 +3,10 @@ import numpy as np
 import tensorflow as tf
 import keras
 import keras.backend as K
+from keras.models import Model
 from keras.models import Sequential
 from keras.layers import Dense
+from keras.layers import Input
 from keras.models import load_model
 import argparse
 import gym
@@ -46,25 +48,24 @@ class DDPG:
         self.tau = args.tau
         self.gamma = args.gamma
         self.env = env
-        self.batch_size = 32
+        self.graph_name = args.graph_name
+        self.batch_size = args.batch_size
 
         self.actor = self.actor_model_init(self.actor_lr)
         self.critic = self.critic_model_init(self.critic_lr)
-        self.actor_target = keras.models.clone_model(self.actor)
-        self.critic_target = keras.models.clone_model(self.critic)
+        self.actor_target = self.actor_model_init(self.actor_lr)
+        self.critic_target = self.critic_model_init(self.critic_lr)
         self.replay_memory = Replay_Memory()
-        self.epsilon = 0.2
-        self.std = 0.05
+        self.epsilon = args.epsilon
+        self.std = args.std
 
         self.actor_Adam = tf.train.AdamOptimizer(learning_rate = self.actor_lr)
         self.critic_Adam = tf.train.AdamOptimizer(learning_rate = self.critic_lr)
 
-        self.value_grads = tf.gradients(self.critic.output, self.critic.input)
-        print(self.value_grads)
+        self.value_grads = tf.gradients(self.critic.output, self.critic.get_layer("actions").input)
 
-        _,self.split = tf.split(self.value_grads[0],[6,2],1)
         self.param_grads = tf.gradients(
-            self.actor.output,self.actor.trainable_weights,grad_ys = -self.split) 
+            self.actor.output,self.actor.trainable_weights,grad_ys = tf.multiply(-1.,self.value_grads)) 
         #self.actor_loss = -(1.0/self.batch_size) * tf.math.reduce_sum(tf.math.multiply(self.value_grads[0][:,6:],self.actor.output))
         #self.updateActor = self.actor_Adam.minimize(self.actor_loss,var_list=self.actor.trainable_weights)
 
@@ -73,15 +74,6 @@ class DDPG:
         self.y_values = tf.placeholder(tf.float32)
         self.critic_loss = tf.losses.mean_squared_error(self.y_values,self.critic.outputs)
         self.updateCritic = self.critic_Adam.minimize(self.critic_loss,var_list = self.critic.trainable_weights)
-
-
-        self.print_value_grads = tf.print(self.value_grads[0][:,6:])
-        self.print_value_grads_full = tf.print(self.value_grads)
-        #self.print_param_grads = tf.print(self.param_grads)
-        self.print_critic_loss = tf.print(self.critic_loss)
-        self.print_critic_outputs = tf.print(self.critic.output)
-        self.print_actor_weights = tf.print(self.actor.trainable_weights)
-        self.print_critic_weights = tf.print(self.critic.trainable_weights)
 
         self.sess = tf.Session()
         init = tf.global_variables_initializer()
@@ -92,18 +84,23 @@ class DDPG:
 
     def actor_model_init(self,lr):
         model = Sequential()
-        model.add(Dense(100, input_dim=6, activation='relu'))
-        model.add(Dense(50, activation='relu'))
+        model.add(Dense(400, input_dim=6, activation='relu'))
+        model.add(Dense(400, activation='relu'))
         model.add(Dense(2, activation='tanh'))
         #model.compile(optimizer=keras.optimizers.Adam(lr=lr),
         #        loss='MSE')
         return model
 
     def critic_model_init(self,lr):
-        model = Sequential()
-        model.add(Dense(400, input_dim=8, activation='relu'))
-        model.add(Dense(400,activation='relu'))
-        model.add(Dense(1, activation='linear'))
+        input1 = Input(shape=(6,),name="states")
+        #d1 = Dense(400,input_dim=6,activation="relu",name="states")(input1)
+        input2 = Input(shape=(2,),name="actions")
+        #d2 = Dense(400,input_dim=2,activation="relu",name="actions")(input2)
+        input = keras.layers.Concatenate()([input1,input2])
+        input = Dense(400, input_dim=8, activation='relu')(input)
+        input = Dense(400, activation='relu')(input)
+        output = Dense(1, activation='linear')(input)
+        model = Model(inputs=[input1,input2],outputs = [output])
         #model.compile(optimizer=keras.optimizers.Adam(lr=lr),
         #        loss='MSE')
         return model
@@ -116,9 +113,11 @@ class DDPG:
         a = self.sess.run(actor_model.output,feed_dict={actor_model.input : np.array(states)})
         return a
 
-    def predict_values(self,state_actions,critic_model):
+    def predict_values(self,states,actions,critic_model):
         #a = critic_model.predict(np.array(state_actions))
-        a = self.sess.run(critic_model.output,feed_dict={critic_model.input : state_actions})
+        a = self.sess.run(critic_model.output,feed_dict={
+            critic_model.get_layer('states').input : states,
+            critic_model.get_layer('actions').input : actions})
         return a
 
     def test(self, num_episodes):
@@ -135,7 +134,7 @@ class DDPG:
                 state,reward,done,_ = self.env.step(action)
                 total += reward
             rewards.append(total)
-        return np.mean(rewards)
+        return np.mean(rewards),np.std(rewards)
 
     def add_noise(self, action, std):
         return action + np.random.normal(0,std,2)
@@ -157,14 +156,11 @@ class DDPG:
             done = False
             total_reward = 0
             while not done:
-                #TODO: make espilon independent
-                #self.epsilon = .5*(1-e/60000)
-                #print("state = ",state)
                 if np.random.rand() < self.epsilon:
                     action = self.random_action()
                 else:
                     action = self.predict_action(state,self.actor)
-                    if self.verbose: print("action = ",action)
+                    #if self.verbose: print("action = ",action)
                     action = self.add_noise(action,self.std)
                 action = np.clip(action,-1,1)
                 newstate,reward,done,_ = self.env.step(action)
@@ -174,51 +170,78 @@ class DDPG:
 
                 #get ys
                 s2s = [s2 for (_,_,_,s2,_) in transitions]
-                actions = np.array(self.predict_actions(s2s,self.actor_target))
-                #print("actions = \n",actions)
-                state_actions_2 = [concat(s2,a) for (s2,a) in zip(s2s,actions)]
-                predicted_values = self.predict_values(state_actions_2,self.critic_target)
+                pred_actions = np.array(self.predict_actions(s2s,self.actor_target))
+                predicted_values = self.predict_values(s2s,pred_actions,self.critic_target)
                 y_values = [r+self.gamma * v if(not done) else np.array([r]) for ((s1,a,r,s2,done),v) in zip(transitions,predicted_values)]
-                #print("y_vals = \n",[list(v) for v in y_values])
-                state_actions = [concat(s1,a) for (s1,a,_,_,_) in transitions]
-                states = [s for (s,_,_,_,_) in transitions]
                 
-                #pred_vals = self.predict_values(state_actions,self.critic)
-                #print("predicted values = \n",pred_vals)
 
-                #print("dif = \n",np.add(y_values,np.multiply(-1,pred_vals)))
+                states = [s for (s,_,_,_,_) in transitions]
+                actions = [a for (_,a,_,_,_) in transitions]
 
-                #print("states \n",states,"s2s = \n",s2s)
+                real_actions = self.predict_actions(states,self.actor)
 
                 #update the actor and critic
-                size = int(self.batch_size)
                 actor_inputs = {
-                    self.actor.input : states[0:size],
-                    self.critic.input : state_actions[0:size]}
+                    self.actor.input : states,
+                    self.critic.get_layer('states').input : states,
+                    self.critic.get_layer('actions').input : real_actions}
                 critic_inputs = {
-                    self.critic.input : state_actions,
+                    self.critic.get_layer('states').input : states,
+                    self.critic.get_layer('actions').input : actions,
                     self.y_values : y_values
                 }
-        
-                self.sess.run(self.updateActor, feed_dict=actor_inputs)
+                v = 0
+                a = 0
+                if(e%50 == 0 and self.verbose):
+                    #checks tau
+                    '''print(self.predict_action(state,self.actor) - self.predict_action(state,self.actor_target))
+                    print(self.predict_values([state],[action],self.critic) - self.predict_values([state],[action],self.critic_target))
+                    print("-------------") '''
+                    #check value_grads
+                    v = self.sess.run(self.critic.output,critic_inputs)
+                    a = self.sess.run(self.actor.output,actor_inputs)
+
+
                 self.sess.run(self.updateCritic,feed_dict=critic_inputs)
+                if(e%50 == 0 and self.verbose):
+                    print("value_grads: ",self.sess.run(self.value_grads,actor_inputs))
+                self.sess.run(self.updateActor, feed_dict=actor_inputs)
+                if(e%50 == 0 and self.verbose):
+                    print("value difference: ",self.sess.run(self.critic.output,critic_inputs)-v)
+                    print("action difference: ",self.sess.run(self.actor.output,actor_inputs)-a)
+                    print("-------------")
+                
 
                 #update the target weights
                 self.actor_target.set_weights(
                     np.multiply(self.tau,self.actor.get_weights())
-                    + np.multiply((1-self.tau),self.actor_target.get_weights()))
+                    + np.multiply((1.-self.tau),self.actor_target.get_weights()))
                 self.critic_target.set_weights(
                     np.multiply(self.tau,self.critic.get_weights())
-                    + np.multiply((1-self.tau),self.critic_target.get_weights()))
+                    + np.multiply((1.-self.tau),self.critic_target.get_weights()))
                 state = newstate
-            #print("episode = ",e,", total reward = ",total_reward)
+                #if(self.verbose): print("------------------------")
+            if(self.verbose):print("episode = ",e,", total reward = ",total_reward)
             if(e%100 == 0):
-                plot_rewards.append(self.test(30))
+                plot_rewards.append(self.test(60))
                 plt.plot(plot_rewards,'b-')
-                plt.savefig('graph_means.png',bbox_inches='tight')
-        #print("------------------------")
+                plt.savefig(self.graph_name + '.png',bbox_inches='tight')
+            if(self.verbose):print("------------------------")
 
-
+    def graph(self,step,graph):
+        rewards = []
+        stds = []
+        for file_no in range(graph+1):
+            self.load_actor_model(file_no)
+            self.load_critic_model(file_no)
+            mean,std = self.test(100)
+            rewards.append(mean)
+            stds.append(std)
+            plt.errorbar(range(0,file_no*step+1,step),rewards,stds)
+            plt.xlabel("model number")
+            plt.ylabel("average reward")
+            plt.title("DDPG Performance plot")
+            plt.savefig(self.graph_name + '.png',bbox_inches='tight')
 
 
     def random_action(self):
@@ -246,7 +269,9 @@ class DDPG:
         self.actor.save_weights(name1)
         self.actor_target.save_weights(name2)
 
-    def load_actor_model(self,actor_file,actor_target_file,file_no):
+    def load_actor_model(self,file_no):
+        actor_file=self.actor_file
+        actor_target_file=self.actor_target_file
         self.actor.load_weights(self.save_dir + actor_file + str(file_no) + ".h5")
         self.actor_target.load_weights(self.save_dir + actor_target_file + str(file_no) + ".h5")
 
@@ -257,7 +282,9 @@ class DDPG:
         self.critic.save_weights(name1)
         self.critic_target.save_weights(name2)
 
-    def load_critic_model(self,critic_file,critic_target_file,file_no):
+    def load_critic_model(self,file_no):
+        critic_file=self.critic_file
+        critic_target_file=self.critic_target_file
         self.critic.load_weights(self.save_dir + critic_file + str(file_no) + ".h5")
         self.critic_target.load_weights(self.save_dir + critic_target_file + str(file_no) + ".h5")
 
@@ -265,7 +292,7 @@ class DDPG:
 
 class Replay_Memory():
 
-    def __init__(self, memory_size=1_000_000):
+    def __init__(self, memory_size=50_000):
         self.memory = None
         self.memsize = memory_size
         self.counter = 0
@@ -298,6 +325,14 @@ def parse_arguments():
                         default=0.05, help="The rate to update the slow network.")
     parser.add_argument('--gamma', dest='gamma', type=float,
                         default=0.98, help="The decay of value rate.")
+    parser.add_argument('--epsilon', dest='epsilon', type=float,
+                        default=0.2, help="Greedy action probability.")
+    parser.add_argument('--std', dest='std', type=float,
+                        default=0.03, help="STD of normal distribution over actions")
+    parser.add_argument('--batch_size', dest='batch_size', type=int,
+                        default=128, help="Mini batch sample size")
+    parser.add_argument('--graph_name', dest='graph_name', type=str,
+                        default="graph_means", help="Name of generated graph")
 
     parser_group = parser.add_mutually_exclusive_group(required=False)
     parser_group.add_argument('--render', dest='render',
@@ -314,7 +349,7 @@ def parse_arguments():
     parser.add_argument('--critic_file',dest='critic_file',type=str,default = 'critic_model')
     parser.add_argument('--critic_target_file',dest='critic_target_file',type=str,default = 'critic_target_model')
     parser.add_argument('--test',dest='test',type=int,default = 0)
-    parser.add_argument('--step',dest='step',type=int,default = 5)
+    parser.add_argument('--step',dest='step',type=int,default = 300)
     parser.add_argument('--train_from',dest='train_from',type=int,default = 0)
     parser.add_argument('--graph',dest='graph',type=int,default = 0)
     parser.add_argument('--verbose', dest='verbose',
@@ -327,8 +362,11 @@ def main():
     args = parse_arguments()
     env = gym.make('Pushing2D-v0')
     algo = DDPG(env, args)
-    algo.train(50000) #50000
-    print(algo.test(100))
+    if(not args.graph):
+        algo.train(50000) #50000
+    else:
+        algo.graph(args.step,args.graph)
+
     '''rewards = []
     for e in range(100):
         state = env.reset()
