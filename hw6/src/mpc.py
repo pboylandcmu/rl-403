@@ -16,6 +16,16 @@ class MPC:
         self.num_nets = model.num_nets
         self.model = model
 
+        #training the state predictor
+        #PSEUDOCODE
+        nextmeans, nextvars = get_output(self.model.output)
+        realnext = "TENSORFLOW PLACEHOLDER"
+        product = 1
+        for i in range(len(fakenext)):
+            #the below mixes up standard deviation and variance
+            product *= tf.distributions.Normal(loc = nextmeans[i],scale = nextvars[i]).pdf(realnext[i])
+        self.loss = -1 * tf.math.log(product)
+
         # Set up optimizer
         self.optimizer = #Initialize your planner with the relevant arguments.
 
