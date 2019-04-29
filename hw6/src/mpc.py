@@ -18,9 +18,8 @@ class MPC:
 
         #training the state predictor
         #PSEUDOCODE
-        nextmeans, nextvars = get_output(self.model.output)
-        realnext = tf.placeholder"TENSORFLOW PLACEHOLDER"
-        product = 1
+        nextmeans, nextvars = model.output[:, 0:self.state_dim], output[:, self.state_dim:]
+        realnext = tf.placeholder(tf.float32,shape=(12,128))
         mydists = tf.distributions.Normal(loc = nextmeans,scale=nextvars)
         likelihoods = mydists.pdf(realnext)
         self.loss = -1 * tf.math.log(tf.reduce_prod(likelihoods))
