@@ -19,12 +19,11 @@ class MPC:
         #training the state predictor
         #PSEUDOCODE
         nextmeans, nextvars = get_output(self.model.output)
-        realnext = "TENSORFLOW PLACEHOLDER"
+        realnext = tf.placeholder"TENSORFLOW PLACEHOLDER"
         product = 1
-        for i in range(len(fakenext)):
-            #the below mixes up standard deviation and variance
-            product *= tf.distributions.Normal(loc = nextmeans[i],scale = nextvars[i]).pdf(realnext[i])
-        self.loss = -1 * tf.math.log(product)
+        mydists = tf.distributions.Normal(loc = nextmeans,scale=nextvars)
+        likelihoods = mydists.pdf(realnext)
+        self.loss = -1 * tf.math.log(tf.reduce_prod(likelihoods))
 
         # Set up optimizer
         self.optimizer = #Initialize your planner with the relevant arguments.
