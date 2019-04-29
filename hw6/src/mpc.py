@@ -66,6 +66,16 @@ class MPC:
           action from MPC
         """
 
+    def TS1(self):
+      N = self.num_nets
+      P = self.npart
+      T = self.plan_hor
+      return np.random.randint(0,high = N,size = (P,T))
+
+
+
+
+
 
 
 

@@ -32,6 +32,7 @@ class PENN:
         # Log variance bounds
         self.max_logvar = tf.Variable(-3*np.ones([1, self.state_dim]), dtype=tf.float32)
         self.min_logvar = tf.Variable(-7*np.ones([1, self.state_dim]), dtype=tf.float32)
+        self.models = [self.create_network() for _ in range(self.num_nets)]
 
 
     def get_output(self, output):
