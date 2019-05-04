@@ -94,6 +94,12 @@ class PENN:
             state_action = [self.concat(s,a) for (s,a) in zip(state,action)]
             self.update_net(n,state,state_action,nextState)
 
+    def predict(self,index,states,actions):
+      state_actions = np.array([self.concat(state,action) for (state,action) in zip(states,actions)])
+      model = self.models[index]
+      feed = {model.input:state_actions}
+      return self.sess.run(model.output,feed)
+
 
     def get_output(self, output):
         """
