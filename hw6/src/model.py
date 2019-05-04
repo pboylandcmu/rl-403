@@ -52,12 +52,16 @@ class PENN:
         self.sess = tf.Session()
         init = tf.global_variables_initializer()
         self.sess.run(init)
-        '''f = {self.models[0].input : [[1.,1.,1.,1.,1.,1.,1.,1.,1.,1.]],
-            self.state_placeholder : [[1.,1.,1.,1.,1.,1.,1.,1.]]
+        '''f = {self.models[0].input : [[1.,1.,1.,1.,1.,1.,1.,1.,1.,1.],[1.,1.,1.,1.,1.,1.,1.,1.,1.,1.]],
+            self.state_placeholder : [[1.,1.,1.,1.,1.,1.,1.,1.],[1.,1.,1.,1.,1.,1.,1.,1.]]
             }
         self.sess.run(tf.print(self.losses[0]),f)
         exit(0)'''
         
+    def update_net(self,index,state_action_in,state_out):
+      feed = {self.state_placeholder : state_out,
+            self.models[index].inputs : state_action_in}
+      self.sess.run(self.updates[index],feed)
 
     def get_output(self, output):
         """
