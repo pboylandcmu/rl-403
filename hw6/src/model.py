@@ -46,22 +46,13 @@ class PENN:
             tf.math.reduce_prod(self.logvars[i],axis = 1)
           ) 
           ) for i in range(self.num_nets)]
-        f = {self.models[0].input : [[1.,1.,1.,1.,1.,1.,1.,1.,1.,1.]],
-            self.state_placeholder : [[1.,1.,1.,1.,1.,1.,1.,1.]]
-            }
         self.sess = tf.Session()
         init = tf.global_variables_initializer()
         self.sess.run(init)
+        '''f = {self.models[0].input : [[1.,1.,1.,1.,1.,1.,1.,1.,1.,1.]],
+            self.state_placeholder : [[1.,1.,1.,1.,1.,1.,1.,1.]]
+            }
         self.sess.run(tf.print(self.losses[0]),f)
-        exit(0)
-        '''print("loss = ",self.loss.shape)
-        print("square = ", tf.math.square(tf.math.subtract(self.means,self.state_placeholder)).shape)
-        print("term 1 = ", tf.linalg.matmul(tf.math.reciprocal(self.logvars),
-          tf.math.square(tf.math.subtract(self.means,self.state_placeholder)),
-          transpose_b= True).shape)
-        print("term 2 = ", tf.math.log(
-            tf.math.reduce_prod(self.logvars,axis = 1)
-          ).shape)
         exit(0)'''
         
 
