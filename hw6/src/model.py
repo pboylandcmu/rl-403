@@ -46,6 +46,9 @@ class PENN:
             tf.math.reduce_prod(self.logvars[i],axis = 1)
           ) 
           ) for i in range(self.num_nets)]
+        
+        self.updates = [op.minimize(loss,var_list = model.trainable_weights) 
+          for (op,loss,model) in zip(self.optimizers,self.losses,self.models)]
         self.sess = tf.Session()
         init = tf.global_variables_initializer()
         self.sess.run(init)
