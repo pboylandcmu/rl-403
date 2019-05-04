@@ -33,7 +33,37 @@ class PENN:
         self.max_logvar = tf.Variable(-3*np.ones([1, self.state_dim]), dtype=tf.float32)
         self.min_logvar = tf.Variable(-7*np.ones([1, self.state_dim]), dtype=tf.float32)
         self.models = [self.create_network() for _ in range(self.num_nets)]
-
+        self.outputs = [self.get_output(model.output) for model in self.models]
+        self.means = [mean for (mean,_) in self.outputs]
+        self.logvars = [logvar for (_,logvar) in self.outputs]
+        self.optimizers = [tf.train.AdamOptimizer(learning_rate = learning_rate) for _ in range(self.num_nets)]
+        self.state_placeholder = tf.placeholder(tf.float32)
+        self.losses = [tf.reduce_sum(
+          tf.linalg.matmul(tf.math.reciprocal(self.logvars[i]),
+          tf.math.square(tf.math.subtract(self.means[i],self.state_placeholder)),
+          transpose_b= True)
+          + tf.math.log(
+            tf.math.reduce_prod(self.logvars[i],axis = 1)
+          ) 
+          ) for i in range(self.num_nets)]
+        f = {self.models[0].input : [[1.,1.,1.,1.,1.,1.,1.,1.,1.,1.]],
+            self.state_placeholder : [[1.,1.,1.,1.,1.,1.,1.,1.]]
+            }
+        self.sess = tf.Session()
+        init = tf.global_variables_initializer()
+        self.sess.run(init)
+        self.sess.run(tf.print(self.losses[0]),f)
+        exit(0)
+        '''print("loss = ",self.loss.shape)
+        print("square = ", tf.math.square(tf.math.subtract(self.means,self.state_placeholder)).shape)
+        print("term 1 = ", tf.linalg.matmul(tf.math.reciprocal(self.logvars),
+          tf.math.square(tf.math.subtract(self.means,self.state_placeholder)),
+          transpose_b= True).shape)
+        print("term 2 = ", tf.math.log(
+            tf.math.reduce_prod(self.logvars,axis = 1)
+          ).shape)
+        exit(0)'''
+        
 
     def get_output(self, output):
         """

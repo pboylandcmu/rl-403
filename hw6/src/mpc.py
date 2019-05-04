@@ -24,9 +24,6 @@ class MPC:
         likelihoods = mydists.pdf(realnext)
         self.loss = -1 * tf.math.log(tf.reduce_prod(likelihoods))
 
-        # Set up optimizer
-        self.optimizer = #Initialize your planner with the relevant arguments.
-
 
     def obs_cost_fn(self, state):
         W_PUSHER = 1
@@ -55,12 +52,14 @@ class MPC:
           rews_trajs: rewards (note this may not be used)
           epochs: number of epochs to train for
         """
+        pass
 
 
     def reset(self):
         """
         Perform any cleanup for MPC that you need before running for a new episode.
         """
+        pass
 
 
     def act(self, state, t):
@@ -73,6 +72,7 @@ class MPC:
         Return:
           action from MPC
         """
+        pass
 
     def TS1(self):
       N = self.num_nets
