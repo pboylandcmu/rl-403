@@ -102,13 +102,9 @@ class MPC:
     def get_elites(self,costs,num_elites):
       #returns the indeces of the top e lowest costs
       elites = []
-      for _ in range(num_elites):
-        elites.append(float('inf'))
-      for c in costs:
-        for e in range(num_elites):
-          if(c < elites[e]):
-            elites[e] = c
-            break
+      costs_copy = costs.copy()
+      costs_copy.sort()
+      elites = costs_copy[0:num_elites]
       for e in range(num_elites):
         elites[e] = costs.index(elites[e])
       return elites
