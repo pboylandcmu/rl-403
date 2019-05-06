@@ -53,9 +53,11 @@ class MPC:
           rews_trajs: rewards (note this may not be used)
           epochs: number of epochs to train for
         """
-        for i in range len(obs_trajs):
-          s,a = 
-        pass
+        D = []
+        for i in range(len(obs_trajs) - 1):
+          s,a,ns = obs_trajs[i],acs_trajs[i],obs_trajs[i+1]
+          D.append((s,a,ns))
+        self.model.train(D,epochs)
 
 
     def reset(self):
