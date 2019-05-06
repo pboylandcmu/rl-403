@@ -1,6 +1,7 @@
 import os
 import tensorflow as tf
 import numpy as np
+import math
 
 class MPC:
     def __init__(self, env, npart, plan_hor, model, popsize, num_elites, max_iters):
@@ -97,6 +98,8 @@ class MPC:
 
     def CEM(self,pop_size,num_elites,iters,mu,sigma,state):
       #destructively modifies mu and sigma
+      print("starting CEM")
+      print(self.npart)
       goal = [state[4],state[5]]
       state = state.copy()
       state = self.concat(state[0:4],state[6:])
@@ -104,19 +107,22 @@ class MPC:
       for _ in range(iters):
         action_sequences = [np.random.normal(mu,sigma) for _ in range(pop_size)]
         costs = np.zeros(pop_size)
-        for _ in range(pop_size):
-          for model_row in range(self.npart):
-            s = [state for _ in range(pop_size)]
-            for model_col in range(self.plan_hor):
-              model_num = TS[model_row][model_col]
-              a = [action_sequence[model_col] for action_sequence in action_sequences]
-              s = self.model.predict(model_num,s,a)
-              for c in range(pop_size):
-                costs[c] += self.obs_cost_fn(s[c],goal)
+        for model_row in range(self.npart):
+          s = [state for _ in range(pop_size)]
+          for model_col in range(self.plan_hor):
+            model_num = TS[model_row][model_col]
+            a = [action_sequence[model_col] for action_sequence in action_sequences]
+            mean,std = self.model.predict(model_num,s,a)
+            std = self.model.sess.run(
+              tf.math.sqrt(tf.math.exp(std)))
+            s = s + np.random.normal(mean,std)
+            for c in range(pop_size):
+              costs[c] += self.obs_cost_fn(s[c],goal)
         elites = self.get_elites(costs,num_elites)
         best_mus = [action_sequences[e] for e in elites]
         mu = np.mean(best_mus,axis = 0)
         sigma = np.std(best_mus,axis = 0)
+      print("ending CEM")
 
     def get_elites(self,costs,num_elites):
       #returns the indeces of the top e lowest costs

@@ -33,6 +33,7 @@ class PENN:
         # Log variance bounds
         self.max_logvar = tf.Variable(-3*np.ones([1, self.state_dim]), dtype=tf.float32)
         self.min_logvar = tf.Variable(-7*np.ones([1, self.state_dim]), dtype=tf.float32)
+
         self.models = [self.create_network() for _ in range(self.num_nets)]
         self.outputs = [self.get_output(model.output) for model in self.models]
         self.means = [mean for (mean,_) in self.outputs]
@@ -41,14 +42,14 @@ class PENN:
         self.state_in = tf.placeholder(tf.float32)
         self.state_out = tf.placeholder(tf.float32)
         self.losses = [tf.reduce_sum(
-          tf.linalg.matmul(tf.math.reciprocal(self.logvars[i]),
+          tf.linalg.matmul(tf.math.reciprocal(tf.math.exp(self.logvars[i])),
           tf.math.square(
             tf.math.add(
               self.state_in,tf.math.subtract(self.means[i],self.state_out))),
           transpose_b= True)
           + tf.math.log(
-            tf.math.reduce_prod(self.logvars[i],axis = 1)
-          )) for i in range(self.num_nets)]
+            tf.math.reduce_prod(tf.math.exp(self.logvars[i]))),axis = 1)
+          for i in range(self.num_nets)]
         
         self.updates = [op.minimize(loss,var_list = model.trainable_weights) 
           for (op,loss,model) in zip(self.optimizers,self.losses,self.models)]
@@ -95,13 +96,10 @@ class PENN:
             self.update_net(n,state,state_action,nextState)
 
     def predict(self,index,states,actions):
-      print(states)
-      print(actions)
       state_actions = np.array([self.concat(state,action) for (state,action) in zip(states,actions)])
-      print(np.array(state_actions).shape)
       model = self.models[index]
       feed = {model.input:state_actions}
-      return self.sess.run(model.output,feed)
+      return self.get_output(self.sess.run(model.output,feed))
 
 
     def get_output(self, output):
