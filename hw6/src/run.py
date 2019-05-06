@@ -54,7 +54,7 @@ class Experiment:
         traj_obs, traj_acs, traj_rets, traj_rews = [], [], [], []
 
         samples = []
-        rand_pol = RandomPolicy()
+        rand_pol = RandomPolicy(2)
         for i in range(NINIT_ROLLOUTS):
             samples.append(self.agent.sample(self.task_hor, rand_pol))
             traj_obs.append(samples[-1]["obs"])

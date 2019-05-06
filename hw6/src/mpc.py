@@ -64,13 +64,16 @@ class MPC:
           rews_trajs: rewards (note this may not be used)
           epochs: number of epochs to train for
         """
-        for i in range(len(obs_trajs) - 1):
-          s,a,ns = obs_trajs[i],acs_trajs[i],obs_trajs[i+1]
-          s = s.copy()
-          s = self.concat(s[0:4],s[6:])
-          a = a.copy()
-          a = self.concat(a[0:4],a[6:])
-          self.D.append((s,a,ns))
+        for i in range(len(obs_trajs)):
+          for j in range(len(obs_trajs[i]) - 1):
+            s,a,ns = obs_trajs[i][j],acs_trajs[i][j],obs_trajs[i][j+1]
+            s = s.copy()
+            s = self.concat(s[0:4],s[6:])
+            a = a.copy()
+            a = self.concat(a[0:4],a[6:])
+            ns = ns.copy()
+            ns = self.concat(ns[0:4],ns[6:])
+            self.D.append((s,a,ns))
         self.model.train(self.D,epochs)
 
 

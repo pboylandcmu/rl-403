@@ -56,18 +56,21 @@ class PENN:
         self.sess = tf.Session()
         init = tf.global_variables_initializer()
         self.sess.run(init)
-        '''
-        a simple test for shape correctness
+        
+        #a simple test for shape correctness
         f = {self.models[0].input : [[1.,1.,1.,1.,1.,1.,1.,1.,1.,1.],[1.,1.,1.,1.,1.,1.,1.,1.,1.,1.]],
-            self.state_placeholder : [[1.,1.,1.,1.,1.,1.,1.,1.],[1.,1.,1.,1.,1.,1.,1.,1.]]
+            self.state_in : [[1.,1.,1.,1.,1.,1.,1.,1.],[1.,1.,1.,1.,1.,1.,1.,1.]],
+            self.state_out : [[1.,1.,1.,1.,1.,1.,1.,1.],[1.,2.,1.,1.,1.,1.,1.,1.]]
             }
         self.sess.run(tf.print(self.losses[0]),f)
-        exit(0)'''
+        exit(0)
         
     def update_net(self,index,state_in,state_action_in,state_out):
       feed = {self.state_in : state_in,
             self.state_out : state_out,
-            self.models[index].inputs : state_action_in}
+            self.models[index].input : state_action_in}
+      self.sess.run(tf.print(self.losses[index]),feed)
+      exit(0)
       self.sess.run(self.updates[index],feed)
 
     def concat(self,list1,list2):
@@ -88,10 +91,11 @@ class PENN:
           data = train_on[n]
           np.random.shuffle(data)
           for i in range(0,len(data),batch_size):
-            train = data[i:np.min(i+batch_size,len(data))]
-            state = train[:,0]
-            action = train[:,1]
-            nextState = train[:,2]
+            x = min(i+batch_size,len(data))
+            train = data[i:x]
+            state = [s for s,_,_ in train]
+            action = [a for _,a,_ in train]
+            nextState = [ns for _,_,ns in train]
             state_action = [self.concat(s,a) for (s,a) in zip(state,action)]
             self.update_net(n,state,state_action,nextState)
 
@@ -99,7 +103,8 @@ class PENN:
       state_actions = np.array([self.concat(state,action) for (state,action) in zip(states,actions)])
       model = self.models[index]
       feed = {model.input:state_actions}
-      return self.get_output(self.sess.run(model.output,feed))
+      print(self.sess.run(model.trainable_weights))
+      return self.sess.run(self.get_output(model.output),feed)
 
 
     def get_output(self, output):
