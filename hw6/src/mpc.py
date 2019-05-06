@@ -41,13 +41,15 @@ class MPC:
 
         pusher_x, pusher_y = state[0], state[1]
         box_x, box_y = state[2], state[3]
-        goal_x, goal_y = goal[0], goal[1] #needs to be checked
+        goal_x, goal_y = goal[0], goal[1] 
 
         pusher_box = np.array([box_x - pusher_x, box_y - pusher_y])
         box_goal = np.array([goal_x - box_x, goal_y - box_y])
         d_box = np.sqrt(np.dot(pusher_box, pusher_box))
         d_goal = np.sqrt(np.dot(box_goal, box_goal))
         diff_coord = np.abs(box_x / box_y - goal_x / goal_y)
+        if(box_y == 0 or goal_y == 0):
+          diff_coord = 0
         # the -0.4 is to adjust for the radius of the box and pusher
         return W_PUSHER * np.max(d_box-0.4,0) + W_GOAL * d_goal + W_DIFF * diff_coord
 
@@ -90,22 +92,22 @@ class MPC:
         Return:
           action from MPC
         """
-        self.CEM(200,20,5,self.mu,self.sigma,state)
+        self.CEM(200,20,5,state)
         a = self.mu[0,:]
-        self.mu = self.mu[1:]
+        self.mu = list(self.mu[1:])
         self.mu.append([0,0])
+        self.mu = np.array(self.mu)
         return a
 
-    def CEM(self,pop_size,num_elites,iters,mu,sigma,state):
+    def CEM(self,pop_size,num_elites,iters,state):
       #destructively modifies mu and sigma
       print("starting CEM")
-      print(self.npart)
       goal = [state[4],state[5]]
       state = state.copy()
       state = self.concat(state[0:4],state[6:])
       TS = self.TS1()
       for _ in range(iters):
-        action_sequences = [np.random.normal(mu,sigma) for _ in range(pop_size)]
+        action_sequences = [np.random.normal(self.mu,self.sigma) for _ in range(pop_size)]
         costs = np.zeros(pop_size)
         for model_row in range(self.npart):
           s = [state for _ in range(pop_size)]
@@ -120,8 +122,8 @@ class MPC:
               costs[c] += self.obs_cost_fn(s[c],goal)
         elites = self.get_elites(costs,num_elites)
         best_mus = [action_sequences[e] for e in elites]
-        mu = np.mean(best_mus,axis = 0)
-        sigma = np.std(best_mus,axis = 0)
+        self.mu = np.mean(best_mus,axis = 0)
+        self.sigma = np.std(best_mus,axis = 0)
       print("ending CEM")
 
     def get_elites(self,costs,num_elites):
@@ -129,9 +131,9 @@ class MPC:
       elites = []
       costs_copy = costs.copy()
       costs_copy.sort()
-      elites = costs_copy[0:num_elites]
-      for e in range(num_elites):
-        elites[e] = costs.index(elites[e])
+      elites_costs = costs_copy[0:num_elites]
+      for c in elites_costs:
+        elites.append(list(costs).index(c))
       return elites
         
          
