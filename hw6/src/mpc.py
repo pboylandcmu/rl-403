@@ -16,6 +16,7 @@ class MPC:
         self.plan_hor = plan_hor
         self.num_nets = model.num_nets
         self.model = model
+        self.D = []
         self.reset()
 
         #training the state predictor
@@ -63,15 +64,14 @@ class MPC:
           rews_trajs: rewards (note this may not be used)
           epochs: number of epochs to train for
         """
-        D = []
         for i in range(len(obs_trajs) - 1):
           s,a,ns = obs_trajs[i],acs_trajs[i],obs_trajs[i+1]
           s = s.copy()
           s = self.concat(s[0:4],s[6:])
           a = a.copy()
           a = self.concat(a[0:4],a[6:])
-          D.append((s,a,ns))
-        self.model.train(D,epochs)
+          self.D.append((s,a,ns))
+        self.model.train(self.D,epochs)
 
 
     def reset(self):

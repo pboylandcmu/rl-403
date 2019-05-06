@@ -3,6 +3,7 @@ import gym
 import envs
 
 from agent import Agent
+from agent import RandomPolicy
 from mpc import MPC
 from model import PENN
 
@@ -37,6 +38,7 @@ class Experiment:
         self.model = PENN(NUM_NETS, STATE_DIM, ACTION_DIM, LR)
         self.policy = MPC(self.env, NUM_PARTICLES, PLAN_HOR, self.model, POPSIZE, NUM_ELITES, MAX_ITERS)
 
+
     def test(self, num_episodes):
         samples = []
         for j in range(num_episodes):
@@ -52,8 +54,9 @@ class Experiment:
         traj_obs, traj_acs, traj_rets, traj_rews = [], [], [], []
 
         samples = []
+        rand_pol = RandomPolicy()
         for i in range(NINIT_ROLLOUTS):
-            samples.append(self.agent.sample(self.task_hor, self.policy))
+            samples.append(self.agent.sample(self.task_hor, rand_pol))
             traj_obs.append(samples[-1]["obs"])
             traj_acs.append(samples[-1]["ac"])
             traj_rews.append(samples[-1]["rewards"])
