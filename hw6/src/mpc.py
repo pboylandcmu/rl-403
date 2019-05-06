@@ -25,15 +25,22 @@ class MPC:
         likelihoods = mydists.pdf(realnext)
         self.loss = -1 * tf.math.log(tf.reduce_prod(likelihoods))'''
 
+    def concat(self,list1,list2):
+      result = []
+      for e in list1:
+          result.append(e)
+      for e in list2:
+          result.append(e)
+      return result
 
-    def obs_cost_fn(self, state):
+    def obs_cost_fn(self, state,goal):
         W_PUSHER = 1
         W_GOAL = 2
         W_DIFF = 5
 
         pusher_x, pusher_y = state[0], state[1]
         box_x, box_y = state[2], state[3]
-        goal_x, goal_y = state[4], state[5] #needs to be checked
+        goal_x, goal_y = goal[0], goal[1] #needs to be checked
 
         pusher_box = np.array([box_x - pusher_x, box_y - pusher_y])
         box_goal = np.array([goal_x - box_x, goal_y - box_y])
@@ -56,6 +63,10 @@ class MPC:
         D = []
         for i in range(len(obs_trajs) - 1):
           s,a,ns = obs_trajs[i],acs_trajs[i],obs_trajs[i+1]
+          s = s.copy()
+          s = self.concat(s[0:4],s[6:])
+          a = a.copy()
+          a = self.concat(a[0:4],a[6:])
           D.append((s,a,ns))
         self.model.train(D,epochs)
 
@@ -86,6 +97,9 @@ class MPC:
 
     def CEM(self,pop_size,num_elites,iters,mu,sigma,state):
       #destructively modifies mu and sigma
+      goal = [state[4],state[5]]
+      state = state.copy()
+      state = self.concat(state[0:4],state[6:])
       TS = self.TS1()
       for _ in range(iters):
         action_sequences = [np.random.normal(mu,sigma) for _ in range(pop_size)]
@@ -98,7 +112,7 @@ class MPC:
               a = [action_sequence[model_col] for action_sequence in action_sequences]
               s = self.model.predict(model_num,s,a)
               for c in range(pop_size):
-                costs[c] += self.obs_cost_fn(s[c])
+                costs[c] += self.obs_cost_fn(s[c],goal)
         elites = self.get_elites(costs,num_elites)
         best_mus = [action_sequences[e] for e in elites]
         mu = np.mean(best_mus,axis = 0)

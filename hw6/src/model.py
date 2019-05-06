@@ -40,8 +40,6 @@ class PENN:
         self.optimizers = [tf.train.AdamOptimizer(learning_rate = learning_rate) for _ in range(self.num_nets)]
         self.state_in = tf.placeholder(tf.float32)
         self.state_out = tf.placeholder(tf.float32)
-        print(self.logvars[0])
-        exit(0)
         self.losses = [tf.reduce_sum(
           tf.linalg.matmul(tf.math.reciprocal(self.logvars[i]),
           tf.math.square(
@@ -97,7 +95,10 @@ class PENN:
             self.update_net(n,state,state_action,nextState)
 
     def predict(self,index,states,actions):
+      print(states)
+      print(actions)
       state_actions = np.array([self.concat(state,action) for (state,action) in zip(states,actions)])
+      print(np.array(state_actions).shape)
       model = self.models[index]
       feed = {model.input:state_actions}
       return self.sess.run(model.output,feed)
