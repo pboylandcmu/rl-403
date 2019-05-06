@@ -42,13 +42,13 @@ class PENN:
         self.state_in = tf.placeholder(tf.float32)
         self.state_out = tf.placeholder(tf.float32)
         self.losses = [tf.reduce_sum(
-          tf.linalg.matmul(tf.math.reciprocal(tf.math.exp(self.logvars[i])),
+          tf.reduce_sum(tf.multiply(tf.math.reciprocal(tf.math.exp(self.logvars[i])),
           tf.math.square(
             tf.math.add(
-              self.state_in,tf.math.subtract(self.means[i],self.state_out))),
-          transpose_b= True)
+              self.state_in,tf.math.subtract(self.means[i],self.state_out)))
+              ),axis=1)
           + tf.math.log(
-            tf.math.reduce_prod(tf.math.exp(self.logvars[i]))),axis = 1)
+            tf.reduce_prod(tf.math.exp(self.logvars[i]),axis=1)))
           for i in range(self.num_nets)]
         
         self.updates = [op.minimize(loss,var_list = model.trainable_weights) 
@@ -58,19 +58,30 @@ class PENN:
         self.sess.run(init)
         
         #a simple test for shape correctness
-        f = {self.models[0].input : [[1.,1.,1.,1.,1.,1.,1.,1.,1.,1.],[1.,1.,1.,1.,1.,1.,1.,1.,1.,1.]],
-            self.state_in : [[1.,1.,1.,1.,1.,1.,1.,1.],[1.,1.,1.,1.,1.,1.,1.,1.]],
-            self.state_out : [[1.,1.,1.,1.,1.,1.,1.,1.],[1.,2.,1.,1.,1.,1.,1.,1.]]
+        '''
+        f = {self.models[0].input : [[1.,1.,1.,1.,1.,1.,1.,1.,1.,1.],[1.,3.,1.,1.,1.,1.,1.,1.,1.,1.]],
+            self.state_in : [[1.,1.,1.,1.,1.,1.,1.,1.],[1.,3.,1.,1.,1.,1.,1.,1.]],
+            self.state_out : [[.5,.5,0.,0.,0.,0.,0.,0.],[.5,.5,0.,0.,0.,0.,0.,0.]]
             }
         self.sess.run(tf.print(self.losses[0]),f)
-        exit(0)
+        self.sess.run(tf.print(tf.reduce_sum(tf.multiply(tf.math.reciprocal(tf.math.exp(self.logvars[0])),
+          tf.math.square(
+            tf.math.add(
+              self.state_in,tf.math.subtract(self.means[0],self.state_out)))
+              )
+              ,axis=1)),f)
+        self.sess.run(tf.print(tf.math.log(
+            tf.reduce_prod(tf.math.exp(self.logvars[0]),axis=1))),f)
+        self.sess.run(tf.print(self.means[0]),f)
+        self.sess.run(tf.print(self.logvars[0]),f)
+        
+        exit(0)'''
         
     def update_net(self,index,state_in,state_action_in,state_out):
       feed = {self.state_in : state_in,
             self.state_out : state_out,
             self.models[index].input : state_action_in}
       self.sess.run(tf.print(self.losses[index]),feed)
-      exit(0)
       self.sess.run(self.updates[index],feed)
 
     def concat(self,list1,list2):
@@ -103,7 +114,6 @@ class PENN:
       state_actions = np.array([self.concat(state,action) for (state,action) in zip(states,actions)])
       model = self.models[index]
       feed = {model.input:state_actions}
-      print(self.sess.run(model.trainable_weights))
       return self.sess.run(self.get_output(model.output),feed)
 
 
