@@ -53,6 +53,8 @@ class MPC:
           rews_trajs: rewards (note this may not be used)
           epochs: number of epochs to train for
         """
+        for i in range len(obs_trajs):
+          s,a = 
         pass
 
 
@@ -76,7 +78,8 @@ class MPC:
         """
         self.CEM(200,20,5,self.mu,self.sigma,state)
         a = self.mu[0,:]
-        self.mu = self.mu[1:].append([0,0])
+        self.mu = self.mu[1:]
+        self.mu.append([0,0])
         return a
 
     def CEM(self,pop_size,num_elites,iters,mu,sigma,state):
@@ -86,8 +89,8 @@ class MPC:
         action_sequences = [np.random.normal(mu,sigma) for _ in range(pop_size)]
         costs = np.zeros(pop_size)
         for _ in range(pop_size):
-          s = [state for _ in range(pop_size)]
           for model_row in range(self.npart):
+            s = [state for _ in range(pop_size)]
             for model_col in range(self.plan_hor):
               model_num = TS[model_row][model_col]
               a = [action_sequence[model_col] for action_sequence in action_sequences]

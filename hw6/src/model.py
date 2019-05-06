@@ -40,6 +40,8 @@ class PENN:
         self.optimizers = [tf.train.AdamOptimizer(learning_rate = learning_rate) for _ in range(self.num_nets)]
         self.state_in = tf.placeholder(tf.float32)
         self.state_out = tf.placeholder(tf.float32)
+        print(self.logvars[0])
+        exit(0)
         self.losses = [tf.reduce_sum(
           tf.linalg.matmul(tf.math.reciprocal(self.logvars[i]),
           tf.math.square(
