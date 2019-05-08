@@ -114,6 +114,27 @@ class MPC:
       for _ in range(iters):
         action_sequences = [np.random.normal(self.mu,self.sigma) for _ in range(pop_size)]
         costs = np.zeros(pop_size)
+
+        ss = [(state,anum,p,0) for p in range(self.npart) for anum in range(pop_size)]
+        ts = [self.TS1() for _ in range(pop_size)]
+        while not all(t >= self.plan_hor - 1 for (_,_,_,t) in ss):
+          oss = [(s,a,p,t,i) for ((s,a,p,t),i) in zip(ss,range(len(ss))) if t<(self.plan_hor-1)]
+          models = [ts[anum][p][t] for (_,anum,p,t,_) in oss]
+          #only works when only 2 models
+          mtorun = 0 if (np.mean(models)<0.5) else 1
+          sitorun = [(s,i) for ((s,_,_,t,i),m) in zip(oss,models) if m == mtorun]
+          #print(len(sitorun))
+          #print(ss)
+          storun = [s for (s,i) in sitorun]
+          sstorun = [ss[i] for (s,i) in sitorun]
+          atorun = [action_sequences[a][t] for (_,a,_,t) in sstorun]
+          mean,std = self.model.predict(mtorun,storun,atorun)
+          newst = [(s+d,i) for ((s,i),d) in zip(sitorun,np.random.normal(mean,std))]
+          for (news,i) in newst:
+            (s,a,p,t) = ss[i]
+            ss[i] = (news,a,p,t+1)
+            costs[a] += self.obs_cost_fn(news,goal)
+        '''
         for model_row in range(self.npart):
           s = [state for _ in range(pop_size)]
           for model_col in range(self.plan_hor):
@@ -125,6 +146,7 @@ class MPC:
             s = s + np.random.normal(mean,std)
             for c in range(pop_size):
               costs[c] += self.obs_cost_fn(s[c],goal)
+        '''
         elites = self.get_elites(costs,num_elites)
         best_mus = [action_sequences[e] for e in elites]
         self.mu = np.mean(best_mus,axis = 0)
