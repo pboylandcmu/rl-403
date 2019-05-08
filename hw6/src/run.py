@@ -86,6 +86,8 @@ class Experiment:
             traj_rets.extend([sample["reward_sum"] for sample in samples])
             traj_rews.extend([sample["rewards"] for sample in samples])
 
+            if(i % 50 == 0):
+                self.model.save_models()
             self.policy.train(
                     [sample["obs"] for sample in samples],
                     [sample["ac"] for sample in samples],
@@ -94,8 +96,7 @@ class Experiment:
 
             if (i+1) % 50 == 0:
                 self.test(20)
-            if(i % 50 == 0):
-                self.model.save_models()
+            
 
 if __name__=="__main__":
     print("task horizon: %d, # particles: %d, plan horizon: %d, num_nets: %d, # init rollouts: %d" % (TASK_HORIZON, NUM_PARTICLES, PLAN_HOR, NUM_NETS, NINIT_ROLLOUTS))

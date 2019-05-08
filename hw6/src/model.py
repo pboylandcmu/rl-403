@@ -162,4 +162,12 @@ class PENN:
         save_name = save_dir + name + alph[m] + str(self.save_count)
         model.save_weights(save_name)
       self.save_count += 1
+    
+    def load_models(self,count,save_dir = "models/",name = "model"):
+      a=ord('A') 
+      alph=[chr(i) for i in range(a,a+26)]
+      for m in range(self.num_nets):
+        model = self.models[m]
+        load_name = save_dir + name + alph[m] + str(count)
+        model.load_weights(load_name)
 
