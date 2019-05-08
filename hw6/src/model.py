@@ -22,8 +22,8 @@ class PENN:
           state_dim: state dimension
           action_dim: action dimension
         """
-
         self.sess = tf.Session()
+        self.save_count = 0
         self.num_nets = num_nets
         self.state_dim = state_dim
         self.action_dim = action_dim
@@ -55,9 +55,6 @@ class PENN:
         self.updates = [op.minimize(loss,var_list = model.trainable_weights) 
           for (op,loss,model) in zip(self.optimizers,self.losses,self.models)]
 
-        #self.rmse_losses = [tf.losses.mean_squared_error(self.state_out-self.state_in,self.means[i]) for i in range(num_nets)]
-
-        self.sess = tf.Session()
         init = tf.global_variables_initializer()
         self.sess.run(init)
         
@@ -128,7 +125,6 @@ class PENN:
 
     def predict(self,index,states,actions):
       state_actions = np.array([self.concat(state,action) for (state,action) in zip(states,actions)])
-      #shape of state_actions is confirmed to be (200,10) every time
       model = self.models[index]
       feed = {model.input:state_actions}
       return self.sess.run(self.predict_outputs[index],feed)
@@ -157,4 +153,13 @@ class PENN:
         O = Dense(2*self.state_dim, activation='linear', kernel_regularizer=l2(0.0001))(h3)
         model = Model(input=I,output=O)
         return model
+
+    def save_models(self,save_dir = "models/",name="model"):
+      a=ord('A') 
+      alph=[chr(i) for i in range(a,a+26)]
+      for m in range(self.num_nets):
+        model = self.models[m]
+        save_name = save_dir + name + alph[m] + str(self.save_count)
+        model.save_weights(save_name)
+      self.save_count += 1
 
