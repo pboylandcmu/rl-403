@@ -36,6 +36,7 @@ class PENN:
 
         self.models = [self.create_network() for _ in range(self.num_nets)]
         self.outputs = [self.get_output(model.output) for model in self.models]
+        self.predict_outputs = [(mean,tf.math.sqrt(tf.math.exp(logvar))) for mean,logvar in self.outputs]
         self.means = [mean for (mean,_) in self.outputs]
         self.logvars = [logvar for (_,logvar) in self.outputs]
         self.optimizers = [tf.train.AdamOptimizer(learning_rate = learning_rate) for _ in range(self.num_nets)]
@@ -127,10 +128,10 @@ class PENN:
 
     def predict(self,index,states,actions):
       state_actions = np.array([self.concat(state,action) for (state,action) in zip(states,actions)])
-      print(np.shape(state_actions))
+      #shape of state_actions is confirmed to be (200,10) every time
       model = self.models[index]
       feed = {model.input:state_actions}
-      return self.sess.run(self.outputs[index],feed)
+      return self.sess.run(self.predict_outputs[index],feed)
 
 
     def get_output(self, output):

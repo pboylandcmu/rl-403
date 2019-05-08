@@ -120,8 +120,8 @@ class MPC:
             model_num = TS[model_row][model_col]
             a = [action_sequence[model_col] for action_sequence in action_sequences]
             mean,std = self.model.predict(model_num,s,a)
-            std = self.model.sess.run(
-              tf.math.sqrt(tf.math.exp(std)))
+            #std = self.model.sess.run(
+            #  tf.math.sqrt(tf.math.exp(logvar)))
             s = s + np.random.normal(mean,std)
             for c in range(pop_size):
               costs[c] += self.obs_cost_fn(s[c],goal)
