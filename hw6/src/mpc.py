@@ -2,6 +2,7 @@ import os
 import tensorflow as tf
 import numpy as np
 import math
+import time
 
 class MPC:
     def __init__(self, env, npart, plan_hor, model, popsize, num_elites, max_iters):
@@ -105,6 +106,7 @@ class MPC:
     def CEM(self,pop_size,num_elites,iters,state):
       #destructively modifies mu and sigma
       print("starting CEM")
+      start = time.time()
       goal = [state[4],state[5]]
       state = state.copy()
       state = self.concat(state[0:4],state[6:])
@@ -127,7 +129,8 @@ class MPC:
         best_mus = [action_sequences[e] for e in elites]
         self.mu = np.mean(best_mus,axis = 0)
         self.sigma = np.std(best_mus,axis = 0)
-      print("ending CEM")
+      end = time.time()
+      print("ending CEM: ",end-start)
 
     def get_elites(self,costs,num_elites):
       #returns the indeces of the top e lowest costs

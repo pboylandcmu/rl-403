@@ -53,6 +53,9 @@ class PENN:
         
         self.updates = [op.minimize(loss,var_list = model.trainable_weights) 
           for (op,loss,model) in zip(self.optimizers,self.losses,self.models)]
+
+        #self.rmse_losses = [tf.losses.mean_squared_error(self.state_out-self.state_in,self.means[i]) for i in range(num_nets)]
+
         self.sess = tf.Session()
         init = tf.global_variables_initializer()
         self.sess.run(init)
@@ -64,10 +67,18 @@ class PENN:
             self.state_out : [[.5,.5,0.,0.,0.,0.,0.,0.],[.5,.5,0.,0.,0.,0.,0.,0.]]
             }
         self.sess.run(tf.print(self.losses[0]),f)
+        print("squared error")
+        self.sess.run(tf.print(
+          tf.math.square(
+            tf.math.add(
+              self.state_in,tf.math.subtract(self.means[0],self.state_out)))),f)
+        print("reciprocals")
+        self.sess.run(tf.print(tf.math.reciprocal(tf.math.exp(self.logvars[0]))),f)
+        print("result")
         self.sess.run(tf.print(tf.reduce_sum(tf.multiply(tf.math.reciprocal(tf.math.exp(self.logvars[0])),
           tf.math.square(
             tf.math.add(
-              self.state_in,tf.math.subtract(self.means[0],self.state_out)))
+              self.state_out,tf.math.subtract(self.means[0],self.state_in)))
               )
               ,axis=1)),f)
         self.sess.run(tf.print(tf.math.log(
@@ -81,7 +92,11 @@ class PENN:
       feed = {self.state_in : state_in,
             self.state_out : state_out,
             self.models[index].input : state_action_in}
-      self.sess.run(tf.print(self.losses[index]),feed)
+      '''self.sess.run(tf.print(self.losses[index]),feed)
+      self.sess.run(tf.print(self.rmse_losses[index]),feed)
+      print("state_action:",np.array(state_action_in))
+      print("diff",np.subtract(state_out,state_in))
+      self.sess.run(tf.print(self.means[index]),feed)'''
       self.sess.run(self.updates[index],feed)
 
     def concat(self,list1,list2):
@@ -112,9 +127,10 @@ class PENN:
 
     def predict(self,index,states,actions):
       state_actions = np.array([self.concat(state,action) for (state,action) in zip(states,actions)])
+      print(np.shape(state_actions))
       model = self.models[index]
       feed = {model.input:state_actions}
-      return self.sess.run(self.get_output(model.output),feed)
+      return self.sess.run(self.outputs[index],feed)
 
 
     def get_output(self, output):
