@@ -9,13 +9,16 @@ from model import PENN
 
 # Training params
 TASK_HORIZON = 40
-NUM_PARTICLES = 6
+#NUM_PARTICLES = 6
+NUM_PARTICLES = 1
 PLAN_HOR = 5
-NUM_NETS = 2
+#NUM_NETS = 2
+NUM_NETS = 1
 
-NTRAIN_ITERS = 1000
+NTRAIN_ITERS = 500
 NROLLOUTS_PER_ITER = 1
-NINIT_ROLLOUTS = 100
+#NINIT_ROLLOUTS = 100
+NINIT_ROLLOUTS = 1000
 
 # CEM params
 POPSIZE = 200
@@ -49,10 +52,11 @@ class Experiment:
             )
         print("Rewards obtained:", np.mean([sample["reward_sum"] for sample in samples]))
         print("Percent success:", np.mean([sample["rewards"][-1]==0 for sample in samples]))
+        return np.mean([sample["rewards"][-1]==0 for sample in samples])
 
     def train(self):
         traj_obs, traj_acs, traj_rets, traj_rews = [], [], [], []
-
+        test_results = []
         samples = []
         rand_pol = RandomPolicy(2)
         for i in range(NINIT_ROLLOUTS):
@@ -88,14 +92,16 @@ class Experiment:
 
             if(i % 50 == 0):
                 self.model.save_models()
+                test_results.append((i,self.test(20)))
+                test_file = open("test_graph.txt","w")
+                test_file.writelines([str(epoch) + "," + str(result) + "\n" for (epoch,result) in test_results])
+                test_file.close()
+
             self.policy.train(
                     [sample["obs"] for sample in samples],
                     [sample["ac"] for sample in samples],
                     [sample["rewards"] for sample in samples]
             )
-
-            if (i+1) % 50 == 0:
-                self.test(20)
             
 
 if __name__=="__main__":
