@@ -51,51 +51,28 @@ class PENN:
           + tf.math.log(
             tf.reduce_prod(tf.math.exp(self.logvars[i]),axis=1)))
           for i in range(self.num_nets)]
+
+        self.rmse_losses = [tf.sqrt(
+          tf.losses.mean_squared_error(self.state_out-self.state_in,self.means[i])) for i in range(self.num_nets)]
+
+        self.losses_tracker = [(self.rmse_losses[i],self.losses[i]) for i in range(self.num_nets)]
         
         self.updates = [op.minimize(loss,var_list = model.trainable_weights) 
           for (op,loss,model) in zip(self.optimizers,self.losses,self.models)]
 
+        self.epochs_trained = 0
+        self.nll_graph = []
+        self.rmse_graph = []
+
         init = tf.global_variables_initializer()
         self.sess.run(init)
-        
-        #a simple test for shape correctness
-        '''
-        f = {self.models[0].input : [[1.,1.,1.,1.,1.,1.,1.,1.,1.,1.],[1.,3.,1.,1.,1.,1.,1.,1.,1.,1.]],
-            self.state_in : [[1.,1.,1.,1.,1.,1.,1.,1.],[1.,3.,1.,1.,1.,1.,1.,1.]],
-            self.state_out : [[.5,.5,0.,0.,0.,0.,0.,0.],[.5,.5,0.,0.,0.,0.,0.,0.]]
-            }
-        self.sess.run(tf.print(self.losses[0]),f)
-        print("squared error")
-        self.sess.run(tf.print(
-          tf.math.square(
-            tf.math.add(
-              self.state_in,tf.math.subtract(self.means[0],self.state_out)))),f)
-        print("reciprocals")
-        self.sess.run(tf.print(tf.math.reciprocal(tf.math.exp(self.logvars[0]))),f)
-        print("result")
-        self.sess.run(tf.print(tf.reduce_sum(tf.multiply(tf.math.reciprocal(tf.math.exp(self.logvars[0])),
-          tf.math.square(
-            tf.math.add(
-              self.state_out,tf.math.subtract(self.means[0],self.state_in)))
-              )
-              ,axis=1)),f)
-        self.sess.run(tf.print(tf.math.log(
-            tf.reduce_prod(tf.math.exp(self.logvars[0]),axis=1))),f)
-        self.sess.run(tf.print(self.means[0]),f)
-        self.sess.run(tf.print(self.logvars[0]),f)
-        
-        exit(0)'''
         
     def update_net(self,index,state_in,state_action_in,state_out):
       feed = {self.state_in : state_in,
             self.state_out : state_out,
             self.models[index].input : state_action_in}
-      '''self.sess.run(tf.print(self.losses[index]),feed)
-      self.sess.run(tf.print(self.rmse_losses[index]),feed)
-      print("state_action:",np.array(state_action_in))
-      print("diff",np.subtract(state_out,state_in))
-      self.sess.run(tf.print(self.means[index]),feed)'''
       self.sess.run(self.updates[index],feed)
+      return self.sess.run(self.losses_tracker[index],feed)
 
     def concat(self,list1,list2):
       result = []
@@ -111,9 +88,14 @@ class PENN:
       size = len(D)
       train_on = [[D[randint(0,size)] for _ in range(size)] for _ in range(self.num_nets)]
       for _ in range(epochs):
+        self.epochs_trained += 1
+        rmse_nets = []
+        nll_nets = []
         for n in range(self.num_nets):
           data = train_on[n]
           np.random.shuffle(data)
+          rmse_losses = []
+          nll_losses = []
           for i in range(0,len(data),batch_size):
             x = min(i+batch_size,len(data))
             train = data[i:x]
@@ -121,8 +103,14 @@ class PENN:
             action = [a for _,a,_ in train]
             nextState = [ns for _,_,ns in train]
             state_action = [self.concat(s,a) for (s,a) in zip(state,action)]
-            self.update_net(n,state,state_action,nextState)
-
+            rmse,nll = self.update_net(n,state,state_action,nextState)
+            rmse_losses.append(rmse)
+            nll_losses.append(nll)
+          rmse_nets.append(np.mean(rmse_losses))
+          nll_nets.append(np.sum(nll_losses)/size)
+        self.rmse_graph.append((self.epochs_trained,np.mean(rmse_nets)))
+        self.nll_graph.append((self.epochs_trained,np.mean(nll_nets)))
+        
     def predict(self,index,states,actions):
       state_actions = np.array([self.concat(state,action) for (state,action) in zip(states,actions)])
       model = self.models[index]
@@ -162,6 +150,13 @@ class PENN:
         save_name = save_dir + name + alph[m] + str(self.save_count)
         model.save_weights(save_name)
       self.save_count += 1
+      rmse_file = open("rmse_graph.txt","w")
+      rmse_file.writelines([str(epoch) + "," + str(rmse) + "\n" for (epoch,rmse) in self.rmse_graph])
+      rmse_file.close()
+      nll_file = open("nll_graph.txt","w")
+      nll_file.writelines([str(epoch) + "," + str(nll) + "\n" for (epoch,nll) in self.nll_graph])
+      nll_file.close()
+
     
     def load_models(self,count,save_dir = "models/",name = "model"):
       a=ord('A') 

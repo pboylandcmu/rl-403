@@ -77,7 +77,6 @@ class MPC:
             self.D.append((s,a,ns))
         self.model.train(self.D,epochs)
 
-
     def reset(self):
         """
         Perform any cleanup for MPC that you need before running for a new episode.
@@ -105,8 +104,8 @@ class MPC:
 
     def CEM(self,pop_size,num_elites,iters,state):
       #destructively modifies mu and sigma
-      print("starting CEM")
-      start = time.time()
+      #print("starting CEM")
+      #start = time.time()
       goal = [state[4],state[5]]
       state = state.copy()
       state = self.concat(state[0:4],state[6:])
@@ -151,8 +150,8 @@ class MPC:
         best_mus = [action_sequences[e] for e in elites]
         self.mu = np.mean(best_mus,axis = 0)
         self.sigma = np.std(best_mus,axis = 0)
-      end = time.time()
-      print("ending CEM: ",end-start)
+      #end = time.time()
+      #print("ending CEM: ",end-start)
 
     def get_elites(self,costs,num_elites):
       #returns the indeces of the top e lowest costs
