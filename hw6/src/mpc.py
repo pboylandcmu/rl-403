@@ -19,6 +19,7 @@ class MPC:
         self.model = model
         self.D = []
         self.reset()
+        self.popsize = popsize
 
         #training the state predictor
         #PSEUDOCODE
@@ -27,6 +28,58 @@ class MPC:
         mydists = tf.distributions.Normal(loc = nextmeans,scale=nextvars)
         likelihoods = mydists.pdf(realnext)
         self.loss = -1 * tf.math.log(tf.reduce_prod(likelihoods))'''
+
+    def point_to_line_dist(self, point, line):
+        """Calculate the distance between a point and a line segment.
+
+        To calculate the closest distance to a line segment, we first need to check
+        if the point projects onto the line segment.  If it does, then we calculate
+        the orthogonal distance from the point to the line.
+        If the point does not project to the line segment, we calculate the 
+        distance to both endpoints and take the shortest distance.
+
+        :param point: Numpy array of form [x,y], describing the point.
+        :type point: numpy.core.multiarray.ndarray
+        :param line: list of endpoint arrays of form [P1, P2]
+        :type line: list of numpy.core.multiarray.ndarray
+        :return: The minimum distance to a point.
+        :rtype: float
+        """
+        # unit vector
+        unit_line = np.array(line[1]) - np.array(line[0])
+        norm_unit_line = unit_line / np.linalg.norm(unit_line)
+
+        # compute the perpendicular distance to the theoretical infinite line
+        segment_dist = (
+          np.linalg.norm(np.cross(line[1] - line[0], line[0] - point)) /
+          np.linalg.norm(unit_line)
+        )
+
+        diff = (
+          (norm_unit_line[0] * (point[0] - line[0][0])) + 
+          (norm_unit_line[1] * (point[1] - line[0][1]))
+        )
+
+        x_seg = (norm_unit_line[0] * diff) + line[0][0]
+        y_seg = (norm_unit_line[1] * diff) + line[0][1]
+
+        endpoint_dist = min(
+          np.linalg.norm(line[0] - point),
+          np.linalg.norm(line[1] - point)
+        )
+
+        # decide if the intersection point falls on the line segment
+        lp1_x = line[0][0]  # line point 1 x
+        lp1_y = line[0][1]  # line point 1 y
+        lp2_x = line[1][0]  # line point 2 x
+        lp2_y = line[1][1]  # line point 2 y
+        is_betw_x = lp1_x <= x_seg <= lp2_x or lp2_x <= x_seg <= lp1_x
+        is_betw_y = lp1_y <= y_seg <= lp2_y or lp2_y <= y_seg <= lp1_y
+        if is_betw_x and is_betw_y:
+          return segment_dist
+        else:
+          # if not, then return the minimum distance to the segment endpoints
+          return endpoint_dist
 
     def obs_cost_fn(self, state,goal):
         W_PUSHER = 1
@@ -47,14 +100,16 @@ class MPC:
         #dir = box_x-pusher_x,box_y-pusher_y
 
         #dot = np.dot(dir,box_vel)/(np.linalg.norm(dir)*np.linalg.norm(box_vel))
-        out_of_bounds = 0
+        distline = self.point_to_line_dist(np.array([pusher_x,pusher_y]),[np.array([box_x-10*box_goal[0],box_y-10*box_goal[1]]),np.array([box_x-0.1*box_goal[0],box_y-0.1*box_goal[1]])])
+
+        '''out_of_bounds = 0
         if((pusher_x > 5 or pusher_x < 0 or pusher_y > 5 or pusher_y < 0)):
           out_of_bounds += 10000
         elif ((box_x > 5 or box_x < 0 or box_y > 5 or box_y < 0)):
-          out_of_bounds += 1000
+          out_of_bounds += 1000'''
         
         # the -0.4 is to adjust for the radius of the box and pusher
-        return W_PUSHER * np.max(d_box-0.4,0) + W_GOAL * d_goal + W_DIFF * diff_coord + out_of_bounds
+        return W_PUSHER * np.max(d_box-0.4,0) + W_GOAL * d_goal + W_DIFF * diff_coord  + 2*distline
 
 
     def train(self, obs_trajs, acs_trajs, rews_trajs, epochs=5):
@@ -94,7 +149,7 @@ class MPC:
         Return:
           action from MPC
         """
-        self.CEM(200,20,5,state)
+        self.CEM(self.popsize,20,5,state)
         a = self.mu[0,:]
         #print("--------------------------")
         #print("state: ",state)

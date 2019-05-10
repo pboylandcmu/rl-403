@@ -110,5 +110,5 @@ if __name__=="__main__":
     exp = Experiment()
     #exp.train()
     exp.model.load_models(9)
-    exp.test(20)
+    exp.test(50)
 
