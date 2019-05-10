@@ -47,12 +47,11 @@ class MPC:
         #dir = box_x-pusher_x,box_y-pusher_y
 
         #dot = np.dot(dir,box_vel)/(np.linalg.norm(dir)*np.linalg.norm(box_vel))
-
+        out_of_bounds = 0
         if((pusher_x > 5 or pusher_x < 0 or pusher_y > 5 or pusher_y < 0)):
-          out_of_bounds = 10000
+          out_of_bounds += 10000
         elif ((box_x > 5 or box_x < 0 or box_y > 5 or box_y < 0)):
-          out_of_bounds = 1000
-        else: out_of_bounds = 0
+          out_of_bounds += 1000
         
         # the -0.4 is to adjust for the radius of the box and pusher
         return W_PUSHER * np.max(d_box-0.4,0) + W_GOAL * d_goal + W_DIFF * diff_coord + out_of_bounds
