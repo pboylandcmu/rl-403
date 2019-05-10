@@ -78,6 +78,7 @@ class Experiment:
             print("Starting training iteration %d." % (i + 1))
 
             samples = []
+            self.model.load_models(6)
             for j in range(NROLLOUTS_PER_ITER):
                 samples.append(
                     self.agent.sample(

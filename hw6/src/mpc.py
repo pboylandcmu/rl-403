@@ -69,11 +69,9 @@ class MPC:
           for j in range(len(obs_trajs[i]) - 1):
             s,a,ns = obs_trajs[i][j],acs_trajs[i][j],obs_trajs[i][j+1]
             s = s.copy()
-            s = self.concat(s[0:4],s[6:])
-            a = a.copy()
-            a = self.concat(a[0:4],a[6:])
+            s = s[0:8]
             ns = ns.copy()
-            ns = self.concat(ns[0:4],ns[6:])
+            ns = ns[0:8]
             self.D.append((s,a,ns))
         self.model.train(self.D,epochs)
 
@@ -97,6 +95,7 @@ class MPC:
         """
         self.CEM(200,20,5,state)
         a = self.mu[0,:]
+        #print("t: ",t," a: ",a)
         self.mu = list(self.mu[1:])
         self.mu.append([0,0])
         self.mu = np.array(self.mu)
@@ -106,10 +105,10 @@ class MPC:
       #destructively modifies mu and sigma
       #print("starting CEM")
       #start = time.time()
-      goal = [state[4],state[5]]
+      goal = [state[8],state[9]]
       state = state.copy()
-      state = self.concat(state[0:4],state[6:])
-      TS = self.TS1()
+      state = state[0:8]
+      #TS = self.TS1()
       for _ in range(iters):
         action_sequences = [np.random.normal(self.mu,self.sigma) for _ in range(pop_size)]
         costs = np.zeros(pop_size)

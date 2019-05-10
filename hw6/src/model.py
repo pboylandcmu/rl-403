@@ -115,6 +115,8 @@ class PENN:
       state_actions = np.array([self.concat(state,action) for (state,action) in zip(states,actions)])
       model = self.models[index]
       feed = {model.input:state_actions}
+      #print(state_actions)
+      #self.sess.run(tf.print(self.predict_outputs[index]),feed)
       return self.sess.run(self.predict_outputs[index],feed)
 
 
