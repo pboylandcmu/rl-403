@@ -28,32 +28,36 @@ class MPC:
         likelihoods = mydists.pdf(realnext)
         self.loss = -1 * tf.math.log(tf.reduce_prod(likelihoods))'''
 
-    def concat(self,list1,list2):
-      result = []
-      for e in list1:
-          result.append(e)
-      for e in list2:
-          result.append(e)
-      return result
-
     def obs_cost_fn(self, state,goal):
         W_PUSHER = 1
         W_GOAL = 2
         W_DIFF = 5
+        W_DIR = -5
 
         pusher_x, pusher_y = state[0], state[1]
         box_x, box_y = state[2], state[3]
         goal_x, goal_y = goal[0], goal[1] 
+        #box_vel = state[6],state[7]
 
         pusher_box = np.array([box_x - pusher_x, box_y - pusher_y])
         box_goal = np.array([goal_x - box_x, goal_y - box_y])
         d_box = np.sqrt(np.dot(pusher_box, pusher_box))
         d_goal = np.sqrt(np.dot(box_goal, box_goal))
         diff_coord = np.abs(box_x / box_y - goal_x / goal_y)
-        if(box_y == 0 or goal_y == 0):
-          diff_coord = 0
+        #dir = box_x-pusher_x,box_y-pusher_y
+
+        #dot = np.dot(dir,box_vel)/(np.linalg.norm(dir)*np.linalg.norm(box_vel))
+
+        if((pusher_x > 4.5 or pusher_x < .5 or pusher_y > 4.5 or pusher_y < .5)):
+          out_of_bounds = 10000
+        elif ((box_x > 4.5 or box_x < 0.5 or box_y > 4.5 or box_y < .5)):
+          out_of_bounds = 1000
+        else: out_of_bounds = 0
+        if(goal_x > 4.5 or goal_x < 0.5 or goal_y > 4.5 or goal_y < .5):
+          out_of_bounds = 0
+        
         # the -0.4 is to adjust for the radius of the box and pusher
-        return W_PUSHER * np.max(d_box-0.4,0) + W_GOAL * d_goal + W_DIFF * diff_coord
+        return W_PUSHER * np.max(d_box-0.4,0) + W_GOAL * d_goal + W_DIFF * diff_coord + out_of_bounds
 
 
     def train(self, obs_trajs, acs_trajs, rews_trajs, epochs=5):
@@ -95,6 +99,8 @@ class MPC:
         """
         self.CEM(200,20,5,state)
         a = self.mu[0,:]
+        #print("--------------------------")
+        #print("state: ",state)
         #print("t: ",t," a: ",a)
         self.mu = list(self.mu[1:])
         self.mu.append([0,0])
@@ -110,6 +116,7 @@ class MPC:
       state = state[0:8]
       #TS = self.TS1()
       for _ in range(iters):
+        #print("-------------------")
         action_sequences = [np.random.normal(self.mu,self.sigma) for _ in range(pop_size)]
         costs = np.zeros(pop_size)
 
@@ -145,6 +152,7 @@ class MPC:
             for c in range(pop_size):
               costs[c] += self.obs_cost_fn(s[c],goal)
         '''
+        #print(costs[0:10])
         elites = self.get_elites(costs,num_elites)
         best_mus = [action_sequences[e] for e in elites]
         self.mu = np.mean(best_mus,axis = 0)

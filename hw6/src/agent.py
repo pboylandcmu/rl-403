@@ -14,7 +14,7 @@ class Agent:
         """
         rewards = []
         states, actions, reward_sum, done = [self.env.reset()], [], 0, False
-
+        print("goal: ",states[0][8:])
         policy.reset()
         for t in range(horizon):
             actions.append(policy.act(states[t], t))

@@ -78,7 +78,6 @@ class Experiment:
             print("Starting training iteration %d." % (i + 1))
 
             samples = []
-            self.model.load_models(6)
             for j in range(NROLLOUTS_PER_ITER):
                 samples.append(
                     self.agent.sample(
@@ -109,5 +108,7 @@ if __name__=="__main__":
     print("task horizon: %d, # particles: %d, plan horizon: %d, num_nets: %d, # init rollouts: %d" % (TASK_HORIZON, NUM_PARTICLES, PLAN_HOR, NUM_NETS, NINIT_ROLLOUTS))
     print("popsize: %d, # elites: %d, max iters: %d" % (POPSIZE, NUM_ELITES, MAX_ITERS))
     exp = Experiment()
-    exp.train()
+    #exp.train()
+    exp.model.load_models(9)
+    exp.test(20)
 
