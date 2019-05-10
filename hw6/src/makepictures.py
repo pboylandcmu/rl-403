@@ -9,6 +9,8 @@ index = [float(s) for s in list(mynll[0])]
 nll = [float(s) for s in list(mynll[1])]
 rmse = [float(s) for s in list(myrmse[1])]
 
-print(index)
-plt.plot([index,nll])
-plt.savefig("lossRmseFig")
+plt.plot(index,nll)
+plt.savefig("lossFig")
+plt.close()
+plt.plot(index,rmse)
+plt.savefig("rmseFig")
