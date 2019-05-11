@@ -9,16 +9,16 @@ from model import PENN
 
 # Training params
 TASK_HORIZON = 40
-#NUM_PARTICLES = 6
-NUM_PARTICLES = 1
+NUM_PARTICLES = 6
+#NUM_PARTICLES = 1
 PLAN_HOR = 5
-#NUM_NETS = 2
-NUM_NETS = 1
+NUM_NETS = 2
+#NUM_NETS = 1
 
 NTRAIN_ITERS = 501
 NROLLOUTS_PER_ITER = 1
-#NINIT_ROLLOUTS = 100
-NINIT_ROLLOUTS = 1000
+NINIT_ROLLOUTS = 100
+#NINIT_ROLLOUTS = 1000
 
 # CEM params
 POPSIZE = 200
@@ -102,7 +102,7 @@ class Experiment:
                     [sample["ac"] for sample in samples],
                     [sample["rewards"] for sample in samples]
             )
-            
+
 
 if __name__=="__main__":
     print("task horizon: %d, # particles: %d, plan horizon: %d, num_nets: %d, # init rollouts: %d" % (TASK_HORIZON, NUM_PARTICLES, PLAN_HOR, NUM_NETS, NINIT_ROLLOUTS))
